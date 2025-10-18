@@ -1,0 +1,140 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}WanderWise{% endblock %}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 45%, #3730a3 100%);
+            min-height: 100vh;
+        }
+        .navbar-logo {
+            height: 100px;
+            width: auto;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.35);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(18px);
+        }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="text-slate-900 flex flex-col min-h-screen">
+    <nav class="bg-white/85 backdrop-blur-md sticky top-0 z-50 border-b border-white/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{% url 'home' %}" class="flex items-center">
+                        {% if site_settings.logo %}
+                            <img src="{{ site_settings.logo.url }}" alt="Site logo" class="navbar-logo">
+                        {% else %}
+                            <span class="font-bold text-2xl text-slate-800">WanderWise</span>
+                        {% endif %}
+                    </a>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4 text-sm font-medium">
+                        <a href="{% url 'flights:search' %}" class="px-3 py-2 rounded-md text-slate-600 hover:text-slate-900">Flights</a>
+                        <a href="{% url 'cars:search' %}" class="px-3 py-2 rounded-md text-slate-600 hover:text-slate-900">Van Hire</a>
+                        {% if user.is_staff %}
+                            <a href="{% url 'dashboard:overview' %}" class="px-3 py-2 rounded-md text-slate-600 hover:text-slate-900">Dashboard</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    {% if user.is_authenticated %}
+                        <div class="flex items-center space-x-4">
+                            <a href="{% url 'accounts:overview' %}" class="text-slate-600 hover:text-slate-900 text-sm font-medium">My Account</a>
+                            <form method="post" action="{% url 'accounts:logout' %}">
+                                {% csrf_token %}
+                                <button type="submit" class="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg text-white bg-slate-800 hover:bg-slate-900">
+                                    <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="flex items-center space-x-3">
+                            <a href="{% url 'accounts:login' %}" class="text-slate-600 hover:text-slate-900 text-sm font-medium">Login</a>
+                            <a href="{% url 'accounts:register' %}" class="inline-flex items-center px-4 py-2 text-sm font-semibold rounded-lg text-white bg-slate-800 hover:bg-slate-900">Register</a>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" id="mobile-menu-button" class="bg-white p-2 inline-flex items-center justify-center rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-slate-500">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="{% url 'flights:search' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900">Flights</a>
+                <a href="{% url 'cars:search' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900">Van Hire</a>
+                {% if user.is_staff %}
+                    <a href="{% url 'dashboard:overview' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900">Dashboard</a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    <a href="{% url 'accounts:overview' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900">My Account</a>
+                    <form method="post" action="{% url 'accounts:logout' %}" class="block">
+                        {% csrf_token %}
+                        <button type="submit" class="w-full text-left block px-3 py-2 rounded-md text-base font-medium text-white bg-slate-800 hover:bg-slate-900">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="block px-3 py-2 rounded-md text-base font-medium text-slate-600 hover:text-slate-900">Login</a>
+                    <a href="{% url 'accounts:register' %}" class="block px-3 py-2 rounded-md text-base font-medium text-white bg-slate-800 hover:bg-slate-900">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    {% if site_settings.custom_header %}
+        <div class="bg-indigo-600/80 text-white text-center py-3 text-sm">
+            {{ site_settings.custom_header|safe }}
+        </div>
+    {% endif %}
+
+    <main class="flex-1 py-12">
+        {% if messages %}
+            <div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 mb-6 space-y-3">
+                {% for message in messages %}
+                    <div class="rounded-2xl px-4 py-3 shadow-lg shadow-slate-900/20 border border-white/30 glass-panel text-white">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            {% block content %}{% endblock %}
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-slate-200">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-sm text-slate-500">
+            <p>&copy; {% now "Y" %} WanderWise. Need help? <a href="mailto:{{ support_email|default:'support@wanderwise.com' }}" class="text-slate-600 hover:text-slate-900">{{ support_email|default:'support@wanderwise.com' }}</a></p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

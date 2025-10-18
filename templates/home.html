@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    {% load static %}
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Travel Search Portal</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #1e3a8a 0%, #1e40af 50%, #3730a3 100%);
+            min-height: 100vh;
+        }
+        .tab-control.is-active {
+            color: #4A5568; 
+            border-bottom-color: #4A5568; 
+        }
+        .search-btn-custom {
+            background-color: #4A5568; 
+            transition: background-color 0.3s;
+        }
+        .search-btn-custom:hover {
+            background-color: #2D3748;
+        }
+        .highlight-card-custom {
+            border-top: 4px solid #A0AEC0;
+        }
+        input:focus, select:focus {
+            border-color: #4A5568;
+            box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+        }
+        .service-card {
+            position: relative;
+            overflow: hidden;
+            border-radius: 1rem;
+            transition: all 0.3s ease;
+        }
+        .navbar-logo {
+            height: 100px;
+            width: auto;
+        }
+        .service-card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.15);
+        }
+        .service-card-image {
+            width: 100%;
+            height: 280px;
+            object-fit: cover;
+        }
+        .service-card-overlay {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: linear-gradient(to top, rgba(0, 0, 0, 0.8), rgba(0, 0, 0, 0.3));
+            padding: 1.5rem;
+            color: #ffffff;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <a href="{% url 'home' %}" class="flex items-center">
+                            {% if site_settings.logo %}
+                                <img src="{{ site_settings.logo.url }}" alt="Site logo" class="navbar-logo">
+                            {% else %}
+                                <span class="font-bold text-xl text-gray-700">WanderWise</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="{% url 'flights:search' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Flights</a>
+                        <a href="{% url 'cars:search' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Van Hire</a>
+                        {% if user.is_staff %}
+                        <a href="{% url 'dashboard:overview' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'accounts:overview' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">My Account</a>
+                        <form method="post" action="{% url 'accounts:logout' %}" class="ml-4 inline">
+                            {% csrf_token %}
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700">Logout</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                        <a href="{% url 'accounts:register' %}" class="ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700">Register</a>
+                    {% endif %}
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" id="mobile-menu-button" class="bg-white p-2 inline-flex items-center justify-center rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="{% url 'flights:search' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Flights</a>
+                <a href="{% url 'cars:search' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Van Hire</a>
+                {% if user.is_staff %}
+                <a href="{% url 'dashboard:overview' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    <a href="{% url 'accounts:overview' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">My Account</a>
+                    <form method="post" action="{% url 'accounts:logout' %}" class="block">
+                        {% csrf_token %}
+                        <button type="submit" class="text-white bg-gray-600 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium w-full text-left">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Login</a>
+                    <a href="{% url 'accounts:register' %}" class="text-white bg-gray-600 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <main>
+        {% for message in messages %}
+            <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 mx-4">
+                {{ message }}
+            </div>
+        {% endfor %}
+        
+        <section class="bg-gradient-to-b from-blue-950 via-blue-900 to-blue-900/90 pt-0 pb-28 md:pt-0 md:pb-36">
+            <div class="relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw]">
+                <div class="relative w-screen h-[200px] overflow-hidden">
+                    <img src="{{ site_settings.hero_image_url }}" alt="Traveler enjoying a scenic view" class="absolute inset-0 w-full h-full object-cover">
+                    <div class="absolute inset-0 flex items-center justify-center px-4 sm:px-8">
+                        <div class="max-w-4xl text-center text-white">
+                            <p class="uppercase tracking-[0.3em] sm:tracking-[0.35em] md:tracking-[0.4em] text-[14px] sm:text-[14px] md:text-[14px] text-blue-100/90">Find your escape</p>
+                            <h1 class="mt-2 text-[24px] sm:text-[26px] md:text-[34px] lg:text-[46px] xl:text-[56px] font-bold tracking-tight">For the First Time Ever</h1>
+                            <p class="mt-6 text-lg md:text-xl text-blue-100/95">Travel from Katunayake To Jaffna Like Never Before.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div id="search-widget" class="mt-14 max-w-4xl mx-auto bg-white rounded-2xl shadow-2xl border border-white/20">
+                    <div class="border-b border-gray-200">
+                        <nav class="-mb-px flex space-x-6 px-6" id="searchTabs" role="tablist">
+                            <button class="tab-control shrink-0 border-b-2 font-semibold text-gray-500 hover:text-gray-700 px-1 py-4 text-base is-active" data-tab-target="flightsTab" role="tab"><i class="fas fa-plane mr-2"></i>Flights</button>
+                            <button class="tab-control shrink-0 border-b-2 font-semibold text-gray-500 hover:text-gray-700 px-1 py-4 text-base" data-tab-target="carsTab" role="tab"><i class="fas fa-shuttle-van mr-2"></i>Van Hire</button>
+                        </nav>
+                    </div>
+
+                    <div class="p-6">
+                        <div id="flightsTab" class="tab-panel is-active" role="tabpanel">
+                            <form method="get" action="{% url 'flights:search' %}" class="space-y-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                    <div>
+                                        <label for="flight-origin" class="sr-only">Origin</label>
+                                        <input type="text" id="flight-origin" name="origin" placeholder="Origin" class="w-full p-3 border border-gray-300 rounded-lg" value="{{ flight_search_form.origin.value|default:'' }}">
+                                    </div>
+                                    <div>
+                                        <label for="flight-dest" class="sr-only">Destination</label>
+                                        <input type="text" id="flight-dest" name="destination" placeholder="Destination" class="w-full p-3 border border-gray-300 rounded-lg" value="{{ flight_search_form.destination.value|default:'' }}">
+                                    </div>
+                                    <div>
+                                        <label for="flight-depart" class="sr-only">Depart</label>
+                                        <input type="date" id="flight-depart" name="departure_date" class="w-full p-3 border border-gray-300 rounded-lg text-gray-500" value="{{ flight_search_form.departure_date.value|default:'' }}">
+                                    </div>
+                                     <div>
+                                        <label for="flight-return" class="sr-only">Return</label>
+                                        <input type="date" id="flight-return" name="return_date" class="w-full p-3 border border-gray-300 rounded-lg text-gray-500" value="{{ flight_search_form.return_date.value|default:'' }}">
+                                    </div>
+                                    <div>
+                                        <label for="flight-passengers" class="sr-only">Passengers</label>
+                                        <input type="number" id="flight-passengers" name="passenger_count" min="1" max="7" placeholder="Passengers" class="w-full p-3 border border-gray-300 rounded-lg" value="{{ flight_search_form.passenger_count.value|default:1 }}">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full search-btn-custom text-white font-bold py-3 px-4 rounded-lg">Search Flights</button>
+                            </form>
+                        </div>
+                        <div id="carsTab" class="tab-panel hidden" role="tabpanel">
+                             <form method="get" action="{% url 'cars:search' %}" class="space-y-4">
+                                <div class="grid grid-cols-1 gap-4">
+                                     <div>
+                                        <label for="car-pickup" class="sr-only">Pick-up location</label>
+                                        <input type="text" id="car-pickup" name="pickup_location" placeholder="Enter pick-up location" class="w-full p-3 border border-gray-300 rounded-lg" value="{{ car_search_form.pickup_location.value|default:'' }}">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div>
+                                        <label for="pickup-date" class="sr-only">Pick-up date</label>
+                                        <input type="date" id="pickup-date" name="pickup_date" class="w-full p-3 border border-gray-300 rounded-lg text-gray-500" value="{{ car_search_form.pickup_date.value|default:'' }}">
+                                    </div>
+                                    <div>
+                                        <label for="dropoff-date" class="sr-only">Drop-off date</label>
+                                        <input type="date" id="dropoff-date" name="dropoff_date" class="w-full p-3 border border-gray-300 rounded-lg text-gray-500" value="{{ car_search_form.dropoff_date.value|default:'' }}">
+                                    </div>
+                                </div>
+                                <div class="grid grid-cols-1 gap-4">
+                                     <div>
+                                        <label for="dropoff-location" class="sr-only">Drop-off location</label>
+                                        <input type="text" id="dropoff-location" name="dropoff_location" placeholder="Enter drop-off location" class="w-full p-3 border border-gray-300 rounded-lg" value="{{ car_search_form.dropoff_location.value|default:'' }}">
+                                    </div>
+                                </div>
+                                <button type="submit" class="w-full search-btn-custom text-white font-bold py-3 px-4 rounded-lg">Search Vans</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="py-16 md:py-24 bg-gradient-to-b from-blue-800/20 to-transparent">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="text-center max-w-3xl mx-auto mb-12">
+                     <h2 class="text-3xl md:text-4xl font-bold text-white">Explore Your Travel Options</h2>
+                     <p class="mt-4 text-lg text-gray-100">Discover amazing deals on flights and van hire for your next adventure</p>
+                </div>
+                
+                <!-- Image Cards Section -->
+                <div class="grid gap-8 md:grid-cols-2 mb-16">
+                    <!-- Flight Card -->
+                    <a href="{% url 'flights:search' %}" class="service-card block bg-white rounded-xl shadow-lg">
+                        <div class="relative">
+                            <img src="{% static 'images/flight-card.jpg' %}" alt="Airplane" class="service-card-image">
+                            <div class="service-card-overlay">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-plane text-3xl mr-3"></i>
+                                    <h3 class="text-2xl font-bold">Flights</h3>
+                                </div>
+                                <p class="text-sm opacity-90">Compare and book flights to destinations across the globe at the best prices</p>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-600 font-medium">Search Flights</span>
+                                <i class="fas fa-arrow-right text-gray-600"></i>
+                            </div>
+                        </div>
+                    </a>
+                    
+                    <!-- Van Hire Card -->
+                    <a href="{% url 'cars:search' %}" class="service-card block bg-white rounded-xl shadow-lg">
+                        <div class="relative">
+                            <img src="https://images.unsplash.com/photo-1449965408869-eaa3f722e40d?w=800&h=500&fit=crop" alt="Van Hire" class="service-card-image">
+                            <div class="service-card-overlay">
+                                <div class="flex items-center mb-2">
+                                    <i class="fas fa-shuttle-van text-3xl mr-3"></i>
+                                    <h3 class="text-2xl font-bold">Van Hire</h3>
+                                </div>
+                                <p class="text-sm opacity-90">Hire a van for spacious, flexible travel tailored to your crew and gear</p>
+                            </div>
+                        </div>
+                        <div class="p-6">
+                            <div class="flex items-center justify-between">
+                                <span class="text-gray-600 font-medium">Explore Van Hire</span>
+                                <i class="fas fa-arrow-right text-gray-600"></i>
+                            </div>
+                        </div>
+                    </a>
+                </div>
+                
+                <!-- Additional Features -->
+                <div class="text-center max-w-3xl mx-auto mb-8">
+                     <h2 class="text-3xl md:text-4xl font-bold text-white">Why Choose WanderWise?</h2>
+                     <p class="mt-4 text-lg text-gray-100">We make travel planning simple, seamless, and stress-free</p>
+                </div>
+                <div class="grid gap-8 md:grid-cols-3">
+                    <div class="p-8 bg-white rounded-xl shadow-lg transition hover:shadow-2xl hover:-translate-y-1">
+                        <div class="inline-block bg-gradient-to-br from-blue-100 to-blue-200 p-4 rounded-xl mb-4">
+                             <i class="fas fa-tags text-2xl text-blue-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold">Best Price Guarantee</h3>
+                        <p class="mt-2 text-gray-600">Browse flights and drives tailored to your vibe—from tropical escapes to alpine adventures.</p>
+                    </div>
+                    <div class="p-8 bg-white rounded-xl shadow-lg transition hover:shadow-2xl hover:-translate-y-1">
+                        <div class="inline-block bg-gradient-to-br from-green-100 to-green-200 p-4 rounded-xl mb-4">
+                            <i class="fas fa-check-circle text-2xl text-green-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold">Instant Confirmation</h3>
+                        <p class="mt-2 text-gray-600">Instantly see what's open, confirm your bookings, and receive live updates across every step.</p>
+                    </div>
+                    <div class="p-8 bg-white rounded-xl shadow-lg transition hover:shadow-2xl hover:-translate-y-1">
+                        <div class="inline-block bg-gradient-to-br from-purple-100 to-purple-200 p-4 rounded-xl mb-4">
+                            <i class="fas fa-shield-alt text-2xl text-purple-600"></i>
+                        </div>
+                        <h3 class="text-xl font-bold">Secure Booking</h3>
+                        <p class="mt-2 text-gray-600">Keep flights and vans synced in a single secure dashboard with encrypted payments.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+        
+        {% if site_settings.advertisement %}
+        <section class="bg-yellow-300 text-center py-4">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                {{ site_settings.advertisement|safe }}
+            </div>
+        </section>
+        {% endif %}
+    </main>
+
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            <p>&copy; {% now "Y" %} Jaffna Airways. All rights reserved. Need help? <a href="mailto:{{ support_email }}" class="text-gray-600 hover:text-gray-900">{{ support_email }}</a></p>
+        </div>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const tabsContainer = document.getElementById('searchTabs');
+            if (!tabsContainer) return;
+
+            const tabControls = tabsContainer.querySelectorAll('.tab-control');
+            const searchWidget = document.getElementById('search-widget');
+            const tabPanels = searchWidget.querySelectorAll('.tab-panel');
+
+            tabControls.forEach(control => {
+                control.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const targetId = control.getAttribute('data-tab-target');
+                    
+                    tabControls.forEach(c => {
+                        c.classList.remove('is-active');
+                        c.setAttribute('aria-selected', 'false');
+                    });
+                    tabPanels.forEach(p => {
+                        p.classList.add('hidden');
+                        p.classList.remove('is-active');
+                    });
+
+                    control.classList.add('is-active');
+                    control.setAttribute('aria-selected', 'true');
+                    const targetPanel = document.getElementById(targetId);
+                    if (targetPanel) {
+                        targetPanel.classList.remove('hidden');
+                        targetPanel.classList.add('is-active');
+                    }
+                });
+            });
+
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if(mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

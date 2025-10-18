@@ -1,0 +1,325 @@
+{% extends "base.html" %}
+
+{% block title %}Secure Payment - WanderWise{% endblock %}
+
+{% block extra_head %}
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+    body {
+        background: #F5F3F0;
+    }
+    .primary-btn {
+        background-color: #4A5568;
+        transition: background-color 0.3s ease;
+    }
+    .primary-btn:hover {
+        background-color: #2D3748;
+    }
+    .flow-card {
+        background: #ffffff;
+        border-radius: 1rem;
+        box-shadow: 0 25px 50px -12px rgba(148, 163, 184, 0.35);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .btn-spinner {
+        display: inline-flex;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="py-6 space-y-8">
+    <div>
+        <a href="{% url 'flights:book-review' flight.id %}" class="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+            <i class="fas fa-arrow-left mr-2"></i>Back to review
+        </a>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Secure payment</h1>
+        <p class="text-gray-600">Enter your card details to confirm booking {{ flight.code }}.</p>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-6">
+            <form method="post" class="flow-card p-6 space-y-6" id="payment-form" data-stripe-key="{{ stripe_publishable_key }}" data-contact-email="{{ booking_data.contact_email }}">
+                {% csrf_token %}
+                {{ form.payment_token }}
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Amount due at confirmation</p>
+                        <p class="text-xs text-gray-500">Includes estimated taxes and fees</p>
+                    </div>
+                    <p class="text-xl font-semibold text-gray-900">${{ estimated_total|floatformat:2 }} <span class="text-sm text-gray-500">{{ currency_code }}</span></p>
+                </div>
+                {% if form.non_field_errors %}
+                    <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-4">
+                        <ul class="space-y-1">
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                {% if stripe_publishable_key %}
+                    <section>
+                        <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-lock mr-2 text-gray-500"></i>Card details
+                        </h2>
+                        <div id="card-element" class="p-4 border border-gray-300 rounded-lg bg-white"></div>
+                        <div id="card-errors" class="text-sm text-red-500 mt-2"></div>
+                        <p class="text-xs text-gray-500 mt-3">We never store your card information. Your card will be charged once the booking is confirmed.</p>
+                    </section>
+
+                    <section class="pt-4">
+                        <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-address-card mr-2 text-gray-500"></i>Billing address</h2>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            {% for billing in form.billing_fields %}
+                                <div class="{% if billing.full_width %}md:col-span-2{% endif %}">
+                                    <label for="{{ billing.field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                        {{ billing.label }}{% if billing.optional %} <span class="text-xs text-gray-500">(optional)</span>{% endif %}
+                                    </label>
+                                    {{ billing.field }}
+                                    {% if billing.field.help_text %}
+                                        <p class="text-xs text-gray-500 mt-1">{{ billing.field.help_text }}</p>
+                                    {% endif %}
+                                    {% if billing.field.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ billing.field.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% else %}
+                    <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-lg p-4">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Stripe keys are not configured for this environment. Submitting this form will finalize the booking using the offline provider without charging a card.
+                    </div>
+                    <section class="pt-4">
+                        <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-address-card mr-2 text-gray-500"></i>Billing address</h2>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            {% for billing in form.billing_fields %}
+                                <div class="{% if billing.full_width %}md:col-span-2{% endif %}">
+                                    <label for="{{ billing.field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                        {{ billing.label }}{% if billing.optional %} <span class="text-xs text-gray-500">(optional)</span>{% endif %}
+                                    </label>
+                                    {{ billing.field }}
+                                    {% if billing.field.help_text %}
+                                        <p class="text-xs text-gray-500 mt-1">{{ billing.field.help_text }}</p>
+                                    {% endif %}
+                                    {% if billing.field.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ billing.field.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endif %}
+
+                <div class="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <a href="{% url 'flights:book-review' flight.id %}" class="inline-flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </a>
+                    <button type="submit" id="payment-submit" class="primary-btn text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                            data-default-label="Confirm payment{% if estimated_total %} — ${{ estimated_total }}{% endif %}"
+                            data-processing-label="Processing...">
+                        <span class="btn-text">Confirm payment{% if estimated_total %} — ${{ estimated_total }}{% endif %}</span>
+                        <span class="btn-spinner hidden"><i class="fas fa-circle-notch fa-spin"></i></span>
+                        <i class="fas fa-credit-card"></i>
+                    </button>
+                </div>
+            </form>
+
+            <section class="flow-card p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Contact summary</h2>
+                <p class="text-gray-700"><span class="font-medium">Email:</span> {{ booking_data.contact_email }}</p>
+                <p class="text-gray-700"><span class="font-medium">Notify admin:</span> {{ booking_data.notify_admin|yesno:"Yes,No" }}</p>
+            </section>
+        </div>
+
+        <aside class="flow-card p-6 sticky top-24 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800">Booking summary</h3>
+            <div class="border-b border-gray-200 pb-4">
+                <div class="flex items-start">
+                    <div class="bg-blue-100 p-2 rounded-lg mr-3 flex-shrink-0">
+                        <i class="fas fa-plane text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">{{ flight.code }}</h4>
+                        <p class="text-sm text-gray-600">{{ flight.origin }} → {{ flight.destination }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-1 text-sm text-gray-600">
+                <div class="flex items-center"><i class="fas fa-calendar mr-2 w-4"></i> {{ flight.departure_time|date:"M d, Y" }}</div>
+                <div class="flex items-center"><i class="fas fa-clock mr-2 w-4"></i> Departs {{ flight.departure_time|time:"g:i A" }}</div>
+                <div class="flex items-center"><i class="fas fa-clock mr-2 w-4"></i> Arrives {{ flight.arrival_time|time:"g:i A" }}</div>
+            </div>
+            <div class="border-t border-gray-200 pt-4 text-sm space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Passengers:</span>
+                    <span class="font-semibold">{{ passenger_count }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Estimated total:</span>
+                    <span class="font-bold text-gray-800">${{ estimated_total|floatformat:2 }}</span>
+                </div>
+                <p class="text-xs text-gray-500">Final amount confirmed at charge time. Currency: {{ currency_code }}.</p>
+            </div>
+            <div class="border-t border-gray-200 pt-4 space-y-2 text-sm text-gray-600">
+                <p class="font-semibold text-gray-800">Passengers</p>
+                <ul class="space-y-1">
+                    {% for passenger in booking_data.passenger_details %}
+                        <li>{{ passenger.first_name }} {{ passenger.last_name }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            {% if fare_breakdown %}
+                <div class="border-t border-gray-200 pt-4 space-y-2 text-sm text-gray-600">
+                    <p class="font-semibold text-gray-800 flex items-center"><i class="fas fa-receipt mr-2 text-gray-500"></i>Fare breakdown</p>
+                    <ul class="space-y-1">
+                        {% for fare in fare_breakdown %}
+                            <li class="flex justify-between">
+                                <span>
+                                    {{ fare.label }}
+                                    {% if fare.detail %}
+                                        <span class="block text-xs text-gray-500">{{ fare.detail }}</span>
+                                    {% endif %}
+                                </span>
+                                <span>${{ fare.price|floatformat:2 }}</span>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            {% if fare_allocation_warning %}
+                <div class="border border-yellow-200 bg-yellow-50 text-yellow-800 text-xs rounded-lg p-3 flex items-start">
+                    <i class="fas fa-exclamation-triangle mr-2 mt-0.5"></i>
+                    <span>Seats are almost sold out. If availability changes before payment completes, totals may adjust.</span>
+                </div>
+            {% endif %}
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const paymentForm = document.getElementById('payment-form');
+        if (!paymentForm) {
+            return;
+        }
+
+        const stripeKey = paymentForm.dataset.stripeKey;
+        const submitButton = document.getElementById('payment-submit');
+        const tokenInput = document.getElementById('id_payment_token');
+        const cardErrors = document.getElementById('card-errors');
+
+        const submitText = submitButton?.querySelector('.btn-text');
+        const submitSpinner = submitButton?.querySelector('.btn-spinner');
+        const submitIcon = submitButton?.querySelector('.fa-credit-card');
+        const defaultLabel = submitButton?.dataset.defaultLabel || 'Confirm payment';
+        const processingLabel = submitButton?.dataset.processingLabel || 'Processing...';
+
+        const setProcessingState = (isProcessing) => {
+            if (!submitButton) {
+                return;
+            }
+            submitButton.disabled = isProcessing;
+            submitButton.classList.toggle('opacity-60', isProcessing);
+            submitButton.classList.toggle('cursor-not-allowed', isProcessing);
+            if (submitText) {
+                submitText.textContent = isProcessing ? processingLabel : defaultLabel;
+            }
+            if (submitSpinner) {
+                submitSpinner.classList.toggle('hidden', !isProcessing);
+            }
+            if (submitIcon) {
+                submitIcon.classList.toggle('hidden', isProcessing);
+            }
+        };
+
+        if (stripeKey) {
+            const stripe = Stripe(stripeKey);
+            const elements = stripe.elements({ appearance: { theme: 'stripe' } });
+            const card = elements.create('card', {
+                hidePostalCode: true,
+                style: {
+                    base: {
+                        color: '#1f2937',
+                        fontFamily: '"Inter", system-ui, sans-serif',
+                        fontSize: '16px',
+                        '::placeholder': { color: '#9ca3af' },
+                    },
+                },
+            });
+            const cardElement = document.getElementById('card-element');
+            card.mount(cardElement);
+
+            paymentForm.addEventListener('submit', async (event) => {
+                if (paymentForm.dataset.paymentReady === 'true') {
+                    return;
+                }
+
+                setProcessingState(true);
+                event.preventDefault();
+
+                if (cardErrors) {
+                    cardErrors.textContent = '';
+                }
+
+                const billingDetails = {
+                    name: [
+                        document.getElementById('id_cardholder_first_name')?.value?.trim() || '',
+                        document.getElementById('id_cardholder_last_name')?.value?.trim() || '',
+                    ].filter(Boolean).join(' ') || undefined,
+                    email: paymentForm.dataset.contactEmail || undefined,
+                    address: {
+                        line1: document.getElementById('id_cardholder_address_line1')?.value?.trim() || undefined,
+                        line2: document.getElementById('id_cardholder_address_line2')?.value?.trim() || undefined,
+                        city: document.getElementById('id_cardholder_address_city')?.value?.trim() || undefined,
+                        state: document.getElementById('id_cardholder_address_state')?.value?.trim() || undefined,
+                        postal_code: document.getElementById('id_cardholder_address_postal_code')?.value?.trim() || undefined,
+                        country: document.getElementById('id_cardholder_address_country')?.value?.trim().toUpperCase() || undefined,
+                    },
+                };
+
+                try {
+                    const { error, paymentMethod } = await stripe.createPaymentMethod({
+                        type: 'card',
+                        card,
+                        billing_details: billingDetails,
+                    });
+
+                    if (error) {
+                        if (cardErrors) {
+                            cardErrors.textContent = error.message || 'Unable to authorise your card. Please check the details and try again.';
+                        }
+                        setProcessingState(false);
+                        return;
+                    }
+
+                    if (tokenInput) {
+                        tokenInput.value = paymentMethod.id;
+                    }
+                    paymentForm.dataset.paymentReady = 'true';
+                    paymentForm.submit();
+                } catch (err) {
+                    if (cardErrors) {
+                        cardErrors.textContent = err.message || 'Unexpected error while processing your card. Please try again.';
+                    }
+                    setProcessingState(false);
+                }
+            });
+        } else {
+            paymentForm.addEventListener('submit', () => {
+                if (paymentForm.dataset.paymentReady === 'true') {
+                    return;
+                }
+                setProcessingState(true);
+            });
+        }
+    });
+</script>
+{% endblock %}

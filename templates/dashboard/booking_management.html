@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Bookings</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #4c1d95 100%);
+            min-height: 100vh;
+        }
+        .navbar-logo {
+            height: 100px;
+            width: auto;
+        }
+        .glass-panel {
+            background: rgba(15, 23, 42, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(18px);
+        }
+        .table-card {
+            background: rgba(255, 255, 255, 0.96);
+            border-radius: 1.5rem;
+            box-shadow: 0 30px 60px rgba(15, 23, 42, 0.28);
+        }
+        .action-select {
+            min-width: 8.5rem;
+        }
+    </style>
+</head>
+<body class="text-slate-900">
+
+    <nav class="bg-white/90 backdrop-blur-md sticky top-0 z-50 border-b border-white/40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <a href="{% url 'home' %}" class="flex items-center">
+                            {% if site_settings.logo %}
+                                <img src="{{ site_settings.logo.url }}" alt="Site logo" class="navbar-logo">
+                            {% else %}
+                                <span class="font-bold text-2xl text-slate-800">WanderWise</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="{% url 'dashboard:overview' %}" class="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium">Overview</a>
+                        <a href="{% url 'dashboard:hotel-pricing' %}" class="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium">Hotel Pricing</a>
+                        <a href="{% url 'dashboard:flight-pricing' %}" class="text-slate-600 hover:text-slate-900 px-3 py-2 rounded-md text-sm font-medium">Flight Pricing</a>
+                        <a href="{% url 'dashboard:booking-management' %}" class="text-slate-900 px-3 py-2 rounded-md text-sm font-semibold border-b-2 border-slate-900">Bookings</a>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <form method="post" action="{% url 'accounts:logout' %}" class="ml-4 inline">
+                        {% csrf_token %}
+                        <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-slate-800 hover:bg-slate-900">
+                            <i class="fas fa-sign-out-alt mr-2"></i>Logout
+                        </button>
+                    </form>
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" id="mobile-menu-button" class="bg-white p-2 inline-flex items-center justify-center rounded-md text-slate-500 hover:text-slate-800 hover:bg-slate-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-slate-500">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="{% url 'dashboard:overview' %}" class="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium">Overview</a>
+                <a href="{% url 'dashboard:hotel-pricing' %}" class="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium">Hotel Pricing</a>
+                <a href="{% url 'dashboard:flight-pricing' %}" class="text-slate-600 hover:text-slate-900 block px-3 py-2 rounded-md text-base font-medium">Flight Pricing</a>
+                <a href="{% url 'dashboard:booking-management' %}" class="text-slate-900 block px-3 py-2 rounded-md text-base font-semibold border-l-4 border-slate-900">Bookings</a>
+                <form method="post" action="{% url 'accounts:logout' %}" class="block">
+                    {% csrf_token %}
+                    <button type="submit" class="text-white bg-slate-800 hover:bg-slate-900 block px-3 py-2 rounded-md text-base font-medium w-full text-left">Logout</button>
+                </form>
+            </div>
+        </div>
+    </nav>
+
+    <main class="pb-24">
+        {% for message in messages %}
+            <div class="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 mt-6">
+                <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 rounded-lg shadow-lg">
+                    {{ message }}
+                </div>
+            </div>
+        {% endfor %}
+
+        <section class="pt-12 md:pt-16">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="glass-panel rounded-3xl p-10 md:p-14 text-white shadow-2xl">
+                    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+                        <div>
+                            <p class="uppercase tracking-[0.25em] text-blue-100/80 text-xs md:text-sm">Booking control center</p>
+                            <h1 class="text-3xl md:text-5xl font-bold mt-3">Manage every reservation in one view</h1>
+                            <p class="mt-4 text-blue-100 text-base md:text-lg max-w-3xl">Update booking statuses, sync payment states, and keep guests on track across hotels, flights, and van hires.</p>
+                        </div>
+                        <div class="grid gap-4">
+                            <a href="{% url 'dashboard:overview' %}" class="inline-flex items-center justify-center px-6 py-3 rounded-2xl bg-white text-slate-900 font-semibold shadow-lg shadow-slate-900/30 hover:-translate-y-1 transition">
+                                <i class="fas fa-chart-line mr-3"></i>View analytics
+                            </a>
+                            <span class="inline-flex items-center justify-center px-6 py-3 rounded-2xl border border-white/40 text-white font-semibold">
+                                <i class="fas fa-clock mr-3"></i>Live updates enabled
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="mt-12 md:mt-16 space-y-10">
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="table-card">
+                    <div class="px-6 py-6 md:px-8 md:py-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-slate-900">Hotel bookings</h2>
+                            <p class="text-sm text-slate-500 mt-1">Track stays, guest statuses, and payment confirmations.</p>
+                        </div>
+                        <span class="inline-flex items-center px-4 py-2 rounded-full bg-indigo-50 text-indigo-600 text-sm font-medium"><i class="fas fa-hotel mr-2"></i>{{ hotel_bookings|length }} reservations</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reference</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Hotel</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Stay</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
+                                    <th class="px-6 py-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-slate-100">
+                                {% for booking in hotel_bookings %}
+                                    <tr class="hover:bg-slate-50 transition">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{{ booking.reference_number }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.room_type.hotel.name }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.check_in }} – {{ booking.check_out }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.status|title }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.payment_status|title }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <form method="post" class="flex flex-wrap items-center gap-3">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="booking_type" value="hotel">
+                                                <input type="hidden" name="reference" value="{{ booking.reference_number }}">
+                                                <select name="status" class="action-select rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                                    {% for value, label in hotel_form.fields.status.choices %}
+                                                        <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <select name="payment_status" class="action-select rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500">
+                                                    {% for value, label in hotel_form.fields.payment_status.choices %}
+                                                        <option value="{{ value }}" {% if booking.payment_status == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button type="submit" class="inline-flex items-center px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">
+                                                    <i class="fas fa-sync-alt mr-2"></i>Update
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-12 text-center text-sm text-slate-400">No hotel bookings.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="table-card">
+                    <div class="px-6 py-6 md:px-8 md:py-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-slate-900">Flight bookings</h2>
+                            <p class="text-sm text-slate-500 mt-1">Update status across departures and manage ticket payments.</p>
+                        </div>
+                        <span class="inline-flex items-center px-4 py-2 rounded-full bg-emerald-50 text-emerald-600 text-sm font-medium"><i class="fas fa-plane mr-2"></i>{{ flight_bookings|length }} flights</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reference</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Flight</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Route</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
+                                    <th class="px-6 py-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-slate-100">
+                                {% for booking in flight_bookings %}
+                                    <tr class="hover:bg-slate-50 transition">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{{ booking.reference_number }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.flight.code }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.flight.origin }} → {{ booking.flight.destination }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.status|title }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.payment_status|title }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <form method="post" class="flex flex-wrap items-center gap-3">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="booking_type" value="flight">
+                                                <input type="hidden" name="reference" value="{{ booking.reference_number }}">
+                                                <select name="status" class="action-select rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                                    {% for value, label in flight_form.fields.status.choices %}
+                                                        <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <select name="payment_status" class="action-select rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-emerald-500">
+                                                    {% for value, label in flight_form.fields.payment_status.choices %}
+                                                        <option value="{{ value }}" {% if booking.payment_status == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button type="submit" class="inline-flex items-center px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700">
+                                                    <i class="fas fa-sync-alt mr-2"></i>Update
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-12 text-center text-sm text-slate-400">No flight bookings.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+                <div class="table-card">
+                    <div class="px-6 py-6 md:px-8 md:py-8 border-b border-slate-100 flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                        <div>
+                            <h2 class="text-2xl font-semibold text-slate-900">Van hire bookings</h2>
+                            <p class="text-sm text-slate-500 mt-1">Monitor pick-up / drop-off progress and payments.</p>
+                        </div>
+                        <span class="inline-flex items-center px-4 py-2 rounded-full bg-amber-50 text-amber-600 text-sm font-medium"><i class="fas fa-van-shuttle mr-2"></i>{{ car_bookings|length }} hires</span>
+                    </div>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-200">
+                            <thead class="bg-slate-50">
+                                <tr>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Reference</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Van</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Period</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Status</th>
+                                    <th class="px-6 py-3 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider">Payment</th>
+                                    <th class="px-6 py-3"></th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-slate-100">
+                                {% for booking in car_bookings %}
+                                    <tr class="hover:bg-slate-50 transition">
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-slate-900">{{ booking.reference_number }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.car }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.pickup_date }} – {{ booking.dropoff_date }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.status|title }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm text-slate-600">{{ booking.payment_status|title }}</td>
+                                        <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                            <form method="post" class="flex flex-wrap items-center gap-3">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="booking_type" value="car">
+                                                <input type="hidden" name="reference" value="{{ booking.reference_number }}">
+                                                <select name="status" class="action-select rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                                    {% for value, label in car_form.fields.status.choices %}
+                                                        <option value="{{ value }}" {% if booking.status == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <select name="payment_status" class="action-select rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-amber-500">
+                                                    {% for value, label in car_form.fields.payment_status.choices %}
+                                                        <option value="{{ value }}" {% if booking.payment_status == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <button type="submit" class="inline-flex items-center px-4 py-2 rounded-lg bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600">
+                                                    <i class="fas fa-sync-alt mr-2"></i>Update
+                                                </button>
+                                            </form>
+                                        </td>
+                                    </tr>
+                                {% empty %}
+                                    <tr>
+                                        <td colspan="6" class="px-6 py-12 text-center text-sm text-slate-400">No van hires.</td>
+                                    </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            <p>&copy; {% now "Y" %} WanderWise Admin. Need help? <a href="mailto:{{ support_email|default:'support@wanderwise.com' }}" class="text-gray-600 hover:text-gray-900">{{ support_email|default:'support@wanderwise.com' }}</a></p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if(mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

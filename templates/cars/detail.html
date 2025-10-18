@@ -1,0 +1,38 @@
+{% extends 'base.html' %}
+{% block title %}{{ object.company }} {{ object.model }}{% endblock %}
+{% block content %}
+<section class="glass-panel rounded-3xl p-10 md:p-14 text-white shadow-2xl">
+	<div class="grid gap-10 md:grid-cols-5">
+		<div class="md:col-span-3 space-y-6">
+			<div class="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-xs uppercase tracking-[0.3em]">Van hire</div>
+			<h1 class="text-4xl md:text-5xl font-bold">{{ object.company }} {{ object.model }}</h1>
+			<p class="text-blue-100 text-base md:text-lg">Cruise in comfort with spacious vans tailored for every stop on your itinerary.</p>
+			<div class="grid gap-6 md:grid-cols-2 text-sm md:text-base">
+				<div class="bg-white/10 rounded-2xl p-5 border border-white/20">
+					<h2 class="font-semibold text-white/90 mb-2"><i class="fas fa-van-shuttle mr-2 text-amber-300"></i>Category</h2>
+					<p class="text-blue-100">{{ object.category }}</p>
+				</div>
+				<div class="bg-white/10 rounded-2xl p-5 border border-white/20">
+					<h2 class="font-semibold text-white/90 mb-2"><i class="fas fa-users mr-2 text-amber-300"></i>Capacity</h2>
+					<p class="text-blue-100">{{ object.seats }} seats • {{ object.luggage_capacity }} bags</p>
+				</div>
+			</div>
+		</div>
+		<div class="md:col-span-2">
+			<div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+				<img src="https://images.unsplash.com/photo-1551739440-5ee1e0d90b84?w=900&h=600&fit=crop" alt="{{ object.company }} {{ object.model }}" class="w-full h-48 object-cover">
+				<div class="p-6 space-y-4 text-slate-900">
+					<div class="text-sm text-slate-500 uppercase tracking-wide">Daily rate</div>
+					<div class="text-3xl font-bold">${{ object.price_per_day }}<span class="text-base font-medium text-slate-500"> / day</span></div>
+					<a href="{% url 'cars:book' object.id %}" class="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600">
+						<i class="fas fa-key mr-2"></i>Hire this van
+					</a>
+					<a href="{% url 'cars:search' %}" class="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:border-slate-400">
+						Explore other vans
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% load form_extras %}
+{% block title %}Update Hotel Pricing{% endblock %}
+{% block content %}
+<section class="max-w-3xl mx-auto bg-white rounded-3xl shadow-2xl overflow-hidden">
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-600 px-8 py-10 text-white">
+        <p class="uppercase tracking-[0.35em] text-xs md:text-sm text-indigo-100/80">Rate management</p>
+        <h1 class="text-3xl font-bold mt-3">Update hotel pricing</h1>
+        <p class="mt-2 text-indigo-100 text-sm">Adjust nightly rates and room counts; changes take effect immediately across booking channels.</p>
+    </div>
+    <form method="post" novalidate class="px-8 py-10 space-y-8">
+        {% csrf_token %}
+        <div class="space-y-6">
+            {% for field in form %}
+                <div>
+                    <label for="{{ field.id_for_label }}" class="block text-sm font-semibold text-slate-700 mb-2">{{ field.label }}</label>
+                    {{ field|add_class:'w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500' }}
+                    {% if field.help_text %}
+                        <p class="mt-2 text-xs text-slate-500">{{ field.help_text }}</p>
+                    {% endif %}
+                    {% for error in field.errors %}
+                        <p class="mt-2 text-sm text-rose-500">{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endfor %}
+        </div>
+
+        {% if form.non_field_errors %}
+            <div class="rounded-2xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-600">
+                {{ form.non_field_errors.0 }}
+            </div>
+        {% endif %}
+
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-end gap-3">
+            <a href="{% url 'dashboard:hotel-pricing' %}" class="inline-flex items-center px-5 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:border-slate-400">
+                Cancel
+            </a>
+            <button type="submit" class="inline-flex items-center px-5 py-3 rounded-xl bg-indigo-600 text-white text-sm font-semibold hover:bg-indigo-700">
+                <i class="fas fa-save mr-2"></i>Save changes
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

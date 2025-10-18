@@ -1,0 +1,428 @@
+body {
+    background-color: #a6c3ee;
+}
+
+.card {
+    box-shadow: 0 0.25rem 0.5rem rgba(0, 0, 0, 0.05);
+}
+
+footer {
+    margin-top: 3rem;
+}
+
+.account-hero {
+    background: linear-gradient(135deg, #246bfd, #6f9cfb);
+    border-radius: 1.5rem;
+    padding: 2.5rem 3rem;
+.home-hero {
+    position: relative;
+    border-radius: 2rem;
+    padding: 3.5rem clamp(2rem, 5vw, 4rem);
+    overflow: hidden;
+    display: grid;
+    gap: 2rem;
+    backdrop-filter: blur(6px);
+}
+
+.home-hero::before {
+    content: '';
+    position: absolute;
+    inset: 10% 55% -20% -15%;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.45), transparent 70%);
+    filter: blur(10px);
+    opacity: 0.8;
+}
+
+.home-hero::after {
+    content: '';
+    position: absolute;
+    inset: -10% 60% 40% -20%;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.35), transparent 65%);
+    transform: rotate(12deg);
+    pointer-events: none;
+}
+
+.home-hero__copy h1 {
+    text-shadow: 0 0.35rem 1.5rem rgba(0, 0, 0, 0.25);
+}
+
+.home-hero__copy,
+.home-hero__stats {
+    position: relative;
+    z-index: 1;
+}
+
+.home-hero__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
+.home-hero__stats {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+}
+
+.hero-pill {
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 999px;
+    padding: 0.6rem 1.5rem;
+    font-weight: 500;
+    backdrop-filter: blur(10px);
+}
+
+.gradient-sunrise {
+    background: linear-gradient(135deg, #ff6cab 0%, #7366ff 50%, #20bdff 100%);
+}
+
+.home-search {
+    position: relative;
+    z-index: 2;
+}
+
+.home-search-card {
+    border-radius: 1.5rem;
+    padding: 2rem;
+    color: #fff;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.15);
+    min-height: 100%;
+    transform-origin: center;
+}
+
+.home-search-card::after {
+    content: '';
+    position: absolute;
+    inset: 60% -30% -20% -30%;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.35), transparent 70%);
+    transform: rotate(-8deg);
+    pointer-events: none;
+}
+
+.home-search-card__icon {
+    width: 3.5rem;
+    height: 3.5rem;
+    border-radius: 1rem;
+    background: rgba(255, 255, 255, 0.2);
+    display: grid;
+    place-items: center;
+    font-size: 1.75rem;
+    margin-bottom: 1.25rem;
+    box-shadow: 0 0.75rem 1.5rem rgba(0, 0, 0, 0.25);
+    animation: iconPulse 6s ease-in-out infinite;
+}
+
+.home-search-card__form {
+    position: relative;
+    z-index: 1;
+}
+
+.home-search-card.hotel {
+    background: linear-gradient(160deg, #ff9a9e 0%, #fad0c4 100%);
+}
+
+.home-search-card.flight {
+    background: linear-gradient(160deg, #a18cd1 0%, #fbc2eb 100%);
+}
+
+.home-search-card.car {
+    background: linear-gradient(160deg, #84fab0 0%, #8fd3f4 100%);
+}
+
+.home-search-card .btn {
+    font-weight: 600;
+}
+
+.home-search-card .form-control,
+.home-search-card select,
+.home-search-card input,
+.home-search-card .form-select {
+    border-radius: 0.75rem;
+    background: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    color: #1e1e1e;
+    box-shadow: none;
+}
+
+.home-search-card .form-check-input {
+    border-radius: 0.5rem;
+    background-color: rgba(255, 255, 255, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+}
+
+.home-search-card .form-check-input:checked {
+    background-color: #246bfd;
+    border-color: #246bfd;
+}
+
+.home-search-card .form-check-label {
+    color: rgba(255, 255, 255, 0.85);
+    font-weight: 500;
+}
+
+.home-search-card .form-control::placeholder,
+.home-search-card input::placeholder,
+.home-search-card select::placeholder {
+    color: rgba(25, 25, 25, 0.55);
+}
+
+.home-search-card form p {
+    color: rgba(255, 255, 255, 0.9);
+    margin-bottom: 1rem;
+}
+
+.home-search-card form p label {
+    display: block;
+    margin-bottom: 0.4rem;
+    font-weight: 600;
+}
+
+.home-search-card label {
+    color: rgba(255, 255, 255, 0.9);
+    font-weight: 600;
+}
+
+.home-search-card .form-control:focus,
+.home-search-card .form-select:focus,
+.home-search-card select:focus,
+.home-search-card input:focus {
+    border-color: rgba(255, 255, 255, 0.75);
+    background: rgba(255, 255, 255, 0.3);
+    color: #fff;
+    box-shadow: 0 0 0 0.25rem rgba(255, 255, 255, 0.25);
+}
+
+.home-search-card ::placeholder {
+    color: rgba(255, 255, 255, 0.7);
+}
+
+.home-highlights {
+    margin-bottom: 2rem;
+}
+
+.highlight-card {
+    border-radius: 1.5rem;
+    padding: 2rem;
+    color: #fff;
+    box-shadow: 0 1rem 2rem rgba(0, 0, 0, 0.1);
+    min-height: 100%;
+    position: relative;
+    overflow: hidden;
+}
+
+.highlight-card.sunset {
+    background: linear-gradient(135deg, #ff9770 0%, #ffd670 100%);
+}
+
+.highlight-card.ocean {
+    background: linear-gradient(135deg, #57c1eb 0%, #246fdb 100%);
+}
+
+.highlight-card.aurora {
+    background: linear-gradient(135deg, #8ec5fc 0%, #e0c3fc 100%);
+}
+
+.home-hero,
+.home-search-card,
+.highlight-card {
+    transition: transform 0.4s ease, box-shadow 0.4s ease;
+}
+
+.home-search-card:hover,
+.highlight-card:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 1.25rem 2.5rem rgba(0, 0, 0, 0.18);
+}
+
+.home-page {
+    background:
+        linear-gradient(135deg, rgba(255, 111, 145, 0.85), rgba(98, 120, 255, 0.9), rgba(64, 224, 208, 0.85)),
+        radial-gradient(circle at top left, rgba(255, 223, 128, 0.45), transparent 55%),
+        radial-gradient(circle at bottom right, rgba(142, 178, 255, 0.5), transparent 60%),
+        #f5f7fa;
+    background-size: 300% 300%, auto, auto, auto;
+    animation: homeGradientFlow 20s ease infinite;
+    min-height: 100vh;
+}
+
+.home-page nav.navbar {
+    background: rgba(10, 24, 61, 0.85) !important;
+    backdrop-filter: blur(8px);
+}
+
+.home-page footer {
+    background: rgba(255, 255, 255, 0.85);
+}
+
+.home-page main.container {
+    position: relative;
+    z-index: 1;
+}
+
+.home-page::before {
+    content: '';
+    position: fixed;
+    inset: -10% -20% -10% -20%;
+    background: radial-gradient(circle at 20% 20%, rgba(255, 255, 255, 0.35), transparent 60%),
+                radial-gradient(circle at 80% 30%, rgba(255, 255, 255, 0.25), transparent 65%),
+                radial-gradient(circle at 60% 80%, rgba(255, 255, 255, 0.3), transparent 70%);
+    pointer-events: none;
+    z-index: 0;
+}
+
+@keyframes homeGradientFlow {
+    0% {
+        background-position: 0% 50%, center, center, center;
+    }
+    50% {
+        background-position: 100% 50%, center, center, center;
+    }
+    100% {
+        background-position: 0% 50%, center, center, center;
+    }
+}
+
+.home-hero__stats .hero-pill {
+    animation: floaty 8s ease-in-out infinite;
+}
+
+.home-hero__stats .hero-pill:nth-child(2) {
+    .highlight-card::after {
+        content: '';
+        position: absolute;
+        inset: 65% -20% -20% -20%;
+        background: radial-gradient(circle at center, rgba(255, 255, 255, 0.4), transparent 70%);
+        transform: rotate(-12deg);
+        opacity: 0.75;
+    }
+
+    animation-delay: 2.5s;
+}
+
+.home-hero__stats .hero-pill:nth-child(3) {
+    animation-delay: 5s;
+}
+
+@keyframes floaty {
+    0%, 100% {
+        transform: translateY(0);
+    }
+    50% {
+        transform: translateY(-6px);
+    }
+}
+
+@keyframes iconPulse {
+    0%, 100% {
+        transform: translateY(0) scale(1);
+    }
+    50% {
+        transform: translateY(-6px) scale(1.05);
+    }
+}
+
+    color: #fff;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+    position: relative;
+    overflow: hidden;
+}
+
+.account-hero::after {
+    content: '';
+
+    .home-hero {
+        padding: 2.5rem 2rem;
+    }
+
+    .home-hero::after {
+        inset: -20% 40% 30% -40%;
+    }
+
+    .home-hero__actions {
+        flex-direction: column;
+    }
+
+    .home-hero__stats {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    position: absolute;
+    inset: auto -10% -40% auto;
+    width: 280px;
+    height: 280px;
+    background: radial-gradient(circle at center, rgba(255, 255, 255, 0.35), transparent 70%);
+    transform: rotate(15deg);
+    pointer-events: none;
+}
+
+.account-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem;
+    position: relative;
+    z-index: 1;
+}
+
+.summary-card {
+    border: none;
+    border-radius: 1rem;
+}
+
+.summary-icon {
+    width: 3rem;
+    height: 3rem;
+    border-radius: 1rem;
+    display: grid;
+    place-items: center;
+    font-size: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+.booking-card {
+    border: none;
+    border-radius: 1rem;
+}
+
+.booking-card .card-header {
+    padding-bottom: 0.75rem;
+}
+
+.booking-card .card-footer {
+    padding-top: 0.75rem;
+}
+
+.booking-item {
+    border: 0;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+}
+
+.booking-item:last-child {
+    border-bottom: 0;
+}
+
+.navbar-logo {
+    height: 100px;
+    width: auto;
+    margin-left: 10px;
+}
+
+.hero-logo {
+    height: 60px;
+    width: auto;
+}
+
+@media (max-width: 767.98px) {
+    .account-hero {
+        padding: 2rem;
+    }
+
+    .account-hero::after {
+        width: 200px;
+        height: 200px;
+        inset: auto -40% -40% auto;
+    }
+}

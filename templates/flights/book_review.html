@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Review Flight Booking - WanderWise{% endblock %}
+
+{% block extra_head %}
+<style>
+    body {
+        background: #F5F3F0;
+    }
+    .primary-btn {
+        background-color: #4A5568;
+        transition: background-color 0.3s ease;
+    }
+    .primary-btn:hover {
+        background-color: #2D3748;
+    }
+    .flow-card {
+        background: #ffffff;
+        border-radius: 1rem;
+        box-shadow: 0 25px 50px -12px rgba(148, 163, 184, 0.35);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="py-6 space-y-8">
+    <div>
+        <a href="{% url 'flights:book' flight.id %}" class="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+            <i class="fas fa-arrow-left mr-2"></i>Edit passenger details
+        </a>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Review your booking</h1>
+        <p class="text-gray-600">Flight {{ flight.code }} &middot; {{ flight.origin }} → {{ flight.destination }}</p>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-6">
+            <section class="flow-card p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Passenger details</h2>
+                <div class="space-y-4">
+                    {% for passenger in booking_data.passenger_details %}
+                        <div class="border border-gray-200 rounded-lg p-4 bg-white">
+                            <p class="font-semibold text-gray-800">Passenger {{ forloop.counter }}</p>
+                            <p class="text-sm text-gray-600">{{ passenger.first_name }} {{ passenger.last_name }}</p>
+                            {% if passenger.contact_number %}
+                                <p class="text-sm text-gray-600">Contact: {{ passenger.contact_number }}</p>
+                            {% endif %}
+                            <p class="text-sm text-gray-600">Date of birth: {{ passenger.date_of_birth }}</p>
+                        </div>
+                    {% endfor %}
+                </div>
+            </section>
+
+            <section class="flow-card p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Contact & notifications</h2>
+                <p class="text-gray-700"><span class="font-medium">Email:</span> {{ booking_data.contact_email }}</p>
+                <p class="text-gray-700"><span class="font-medium">Notify admin:</span> {{ booking_data.notify_admin|yesno:"Yes,No" }}</p>
+                <div class="mt-4 bg-blue-50 border border-blue-100 text-blue-800 text-sm rounded-lg p-4 flex items-start">
+                    <i class="fas fa-lock mr-2 mt-0.5"></i>
+                    <span>Next, you will provide card details on a secure payment page. No payment has been taken yet.</span>
+                </div>
+            </section>
+
+            <form method="post" class="flow-card p-6 space-y-4">
+                {% csrf_token %}
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Amount due on next step</p>
+                        <p class="text-xs text-gray-500">Includes estimated taxes and fees</p>
+                    </div>
+                    <p class="text-xl font-semibold text-gray-900">${{ estimated_total|floatformat:2 }} <span class="text-sm text-gray-500">{{ currency_code }}</span></p>
+                </div>
+                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                    <div>
+                        <h2 class="text-xl font-semibold text-gray-800">Ready to pay?</h2>
+                        <p class="text-sm text-gray-600">You can still go back to update passengers before continuing.</p>
+                    </div>
+                    <button type="submit" class="primary-btn text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all">
+                        Proceed to payment <i class="fas fa-arrow-right ml-2"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+
+        <aside class="flow-card p-6 sticky top-24 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800">Flight summary</h3>
+            <div class="border-b border-gray-200 pb-4">
+                <div class="flex items-start">
+                    <div class="bg-blue-100 p-2 rounded-lg mr-3 flex-shrink-0">
+                        <i class="fas fa-plane text-blue-600"></i>
+                    </div>
+                    <div>
+                        <h4 class="font-semibold text-gray-800">{{ flight.code }}</h4>
+                        <p class="text-sm text-gray-600">{{ flight.origin }} → {{ flight.destination }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-2 text-sm text-gray-600">
+                <div class="flex items-center"><i class="fas fa-calendar mr-2 w-4"></i> {{ flight.departure_time|date:"M d, Y" }}</div>
+                <div class="flex items-center"><i class="fas fa-clock mr-2 w-4"></i> Departs {{ flight.departure_time|time:"g:i A" }}</div>
+                <div class="flex items-center"><i class="fas fa-clock mr-2 w-4"></i> Arrives {{ flight.arrival_time|time:"g:i A" }}</div>
+            </div>
+            <div class="border-t border-gray-200 pt-4 text-sm space-y-2">
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Passengers:</span>
+                    <span class="font-semibold">{{ passenger_count }}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Base fare:</span>
+                    <span class="font-semibold">${{ flight.base_price }}</span>
+                </div>
+                {% if fare_breakdown %}
+                    <div class="pt-2 text-sm text-gray-600 space-y-1">
+                        <p class="font-semibold text-gray-700 flex items-center"><i class="fas fa-receipt mr-2 text-gray-500"></i>Fare breakdown</p>
+                        <ul class="space-y-1">
+                            {% for fare in fare_breakdown %}
+                                <li class="flex justify-between">
+                                    <span>
+                                        {{ fare.label }}
+                                        {% if fare.detail %}
+                                            <span class="block text-xs text-gray-500">{{ fare.detail }}</span>
+                                        {% endif %}
+                                    </span>
+                                    <span>${{ fare.price|floatformat:2 }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                <div class="flex justify-between">
+                    <span class="text-gray-600">Estimated total ({{ currency_code }}):</span>
+                    <span class="font-bold text-gray-800">${{ estimated_total|floatformat:2 }}</span>
+                </div>
+                <p class="text-xs text-gray-500">Taxes and fees reflected in this estimate. Final total shown on payment.</p>
+                {% if fare_allocation_warning %}
+                    <p class="text-xs text-red-500 flex items-center"><i class="fas fa-exclamation-triangle mr-1"></i>Seats are disappearing quickly—total may change if availability shifts.</p>
+                {% endif %}
+            </div>
+        </aside>
+    </div>
+</div>
+{% endblock %}

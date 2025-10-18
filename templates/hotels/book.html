@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book {{ room_type.hotel.name }} - WanderWise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F3F0; 
+        }
+        .search-btn-custom {
+            background-color: #4A5568; 
+            transition: background-color 0.3s;
+        }
+        .search-btn-custom:hover {
+            background-color: #2D3748;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #4A5568;
+            box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+        }
+        .navbar-logo {
+            height: 100px;
+            width: auto;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <a href="{% url 'home' %}" class="flex items-center">
+                            {% if site_settings.logo %}
+                                <img src="{{ site_settings.logo.url }}" alt="Site logo" class="navbar-logo">
+                            {% else %}
+                                <span class="font-bold text-xl text-gray-700">WanderWise</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        <a href="{% url 'hotels:search' %}" class="text-gray-900 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-gray-600">Hotels</a>
+                        <a href="{% url 'flights:search' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Flights</a>
+                        <a href="{% url 'cars:search' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Van Hire</a>
+                        {% if user.is_staff %}
+                        <a href="{% url 'dashboard:overview' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'accounts:overview' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">My Account</a>
+                        <form method="post" action="{% url 'accounts:logout' %}" class="ml-4 inline">
+                            {% csrf_token %}
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700">Logout</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                        <a href="{% url 'accounts:register' %}" class="ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700">Register</a>
+                    {% endif %}
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" id="mobile-menu-button" class="bg-white p-2 inline-flex items-center justify-center rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                <a href="{% url 'hotels:search' %}" class="text-gray-900 block px-3 py-2 rounded-md text-base font-medium border-l-4 border-gray-600">Hotels</a>
+                <a href="{% url 'flights:search' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Flights</a>
+                <a href="{% url 'cars:search' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Van Hire</a>
+                {% if user.is_staff %}
+                <a href="{% url 'dashboard:overview' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    <a href="{% url 'accounts:overview' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">My Account</a>
+                    <form method="post" action="{% url 'accounts:logout' %}" class="block">
+                        {% csrf_token %}
+                        <button type="submit" class="text-white bg-gray-600 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium w-full text-left">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Login</a>
+                    <a href="{% url 'accounts:register' %}" class="text-white bg-gray-600 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <main class="min-h-screen">
+        {% for message in messages %}
+            <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 mx-4">
+                {{ message }}
+            </div>
+        {% endfor %}
+        
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8">
+                <a href="{% url 'hotels:search' %}" class="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to search
+                </a>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-bed mr-3 text-gray-600"></i>Book {{ room_type.hotel.name }}
+                </h1>
+                <p class="text-gray-600">{{ room_type.get_room_type_display }}</p>
+            </div>
+            
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-6">Booking Details</h2>
+                        <form method="post" novalidate class="space-y-6">
+                            {% csrf_token %}
+                            
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="{{ form.check_in.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Check-in Date</label>
+                                    <input type="date" name="{{ form.check_in.name }}" id="{{ form.check_in.id_for_label }}" value="{{ form.check_in.value|default:'' }}" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
+                                    {% if form.check_in.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.check_in.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ form.check_out.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Check-out Date</label>
+                                    <input type="date" name="{{ form.check_out.name }}" id="{{ form.check_out.id_for_label }}" value="{{ form.check_out.value|default:'' }}" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
+                                    {% if form.check_out.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.check_out.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="{{ form.rooms.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Number of Rooms</label>
+                                    <input type="number" name="{{ form.rooms.name }}" id="{{ form.rooms.id_for_label }}" value="{{ form.rooms.value|default:'1' }}" min="1" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
+                                    {% if form.rooms.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.rooms.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ form.guests.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Number of Guests</label>
+                                    <input type="number" name="{{ form.guests.name }}" id="{{ form.guests.id_for_label }}" value="{{ form.guests.value|default:'1' }}" min="1" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
+                                    {% if form.guests.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.guests.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.surname.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Surname</label>
+                                <input type="text" name="{{ form.surname.name }}" id="{{ form.surname.id_for_label }}" value="{{ form.surname.value|default:'' }}" placeholder="Your surname" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
+                                {% if form.surname.errors %}
+                                    <p class="text-red-500 text-sm mt-1">{{ form.surname.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.contact_email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+                                <input type="email" name="{{ form.contact_email.name }}" id="{{ form.contact_email.id_for_label }}" value="{{ form.contact_email.value|default:'' }}" placeholder="your@email.com" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
+                                {% if form.contact_email.errors %}
+                                    <p class="text-red-500 text-sm mt-1">{{ form.contact_email.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            <div>
+                                <label for="{{ form.special_requests.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Special Requests (Optional)</label>
+                                <textarea name="{{ form.special_requests.name }}" id="{{ form.special_requests.id_for_label }}" rows="3" placeholder="Any special requests or requirements..." class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none resize-none">{{ form.special_requests.value|default:'' }}</textarea>
+                                {% if form.special_requests.errors %}
+                                    <p class="text-red-500 text-sm mt-1">{{ form.special_requests.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+                            
+                            {% if form.room_type_id %}
+                                {{ form.room_type_id }}
+                            {% endif %}
+                            {% if form.payment_token %}
+                                {{ form.payment_token }}
+                            {% endif %}
+                            
+                            <div class="pt-4">
+                                <button type="submit" class="w-full search-btn-custom text-white font-bold py-4 px-6 rounded-lg hover:shadow-lg transition-all">
+                                    <i class="fas fa-credit-card mr-2"></i>Confirm Booking
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl shadow-lg p-6 sticky top-24">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Booking Summary</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="border-b border-gray-200 pb-4">
+                                <div class="flex items-start">
+                                    <div class="bg-blue-100 p-2 rounded-lg mr-3 flex-shrink-0">
+                                        <i class="fas fa-hotel text-blue-600"></i>
+                                    </div>
+                                    <div>
+                                        <h4 class="font-semibold text-gray-800">{{ room_type.hotel.name }}</h4>
+                                        <p class="text-sm text-gray-600">{{ room_type.get_room_type_display }}</p>
+                                        {% if room_type.description %}
+                                            <p class="text-sm text-gray-500 mt-1">{{ room_type.description }}</p>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-2">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Base price per night:</span>
+                                    <span class="font-semibold">${{ room_type.base_price }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm text-gray-500">
+                                    <span>Taxes and fees will be calculated at checkout</span>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 pt-4">
+                                <div class="flex justify-between">
+                                    <span class="text-lg font-semibold text-gray-800">Starting from:</span>
+                                    <span class="text-2xl font-bold text-gray-800">${{ room_type.base_price }}</span>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-1">per night</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            <p>&copy; {% now "Y" %} WanderWise. All rights reserved. Need help? <a href="mailto:{{ support_email }}" class="text-gray-600 hover:text-gray-900">{{ support_email }}</a></p>
+        </div>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if(mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Book Flight {{ flight.code }} - WanderWise</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #F5F3F0; 
+        }
+        .search-btn-custom {
+            background-color: #4A5568; 
+            transition: background-color 0.3s;
+        }
+        .search-btn-custom:hover {
+            background-color: #2D3748;
+        }
+        input:focus, select:focus, textarea:focus {
+            border-color: #4A5568;
+            box-shadow: 0 0 0 3px rgba(74, 85, 104, 0.1);
+        }
+        .navbar-logo {
+            height: 100px;
+            width: auto;
+        }
+    </style>
+</head>
+<body class="text-gray-800">
+
+    <nav class="bg-white/80 backdrop-blur-md sticky top-0 z-50 border-b border-gray-200">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex items-center justify-between h-16">
+                <div class="flex items-center">
+                    <div class="flex-shrink-0">
+                        <a href="{% url 'home' %}" class="flex items-center">
+                            {% if site_settings.logo %}
+                                <img src="{{ site_settings.logo.url }}" alt="Site logo" class="navbar-logo">
+                            {% else %}
+                                <span class="font-bold text-xl text-gray-700">WanderWise</span>
+                            {% endif %}
+                        </a>
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    <div class="ml-10 flex items-baseline space-x-4">
+                        {% if hotels_enabled %}
+                        <a href="{% url 'hotels:search' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Hotels</a>
+                        {% endif %}
+                        <a href="{% url 'flights:search' %}" class="text-gray-900 px-3 py-2 rounded-md text-sm font-medium border-b-2 border-gray-600">Flights</a>
+                        <a href="{% url 'cars:search' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Van Hire</a>
+                        {% if user.is_staff %}
+                        <a href="{% url 'dashboard:overview' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Dashboard</a>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="hidden md:block">
+                    {% if user.is_authenticated %}
+                        <a href="{% url 'accounts:overview' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">My Account</a>
+                        <form method="post" action="{% url 'accounts:logout' %}" class="ml-4 inline">
+                            {% csrf_token %}
+                            <button type="submit" class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700">Logout</button>
+                        </form>
+                    {% else %}
+                        <a href="{% url 'accounts:login' %}" class="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium">Login</a>
+                        <a href="{% url 'accounts:register' %}" class="ml-4 inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md text-white bg-gray-600 hover:bg-gray-700">Register</a>
+                    {% endif %}
+                </div>
+                <div class="-mr-2 flex md:hidden">
+                    <button type="button" id="mobile-menu-button" class="bg-white p-2 inline-flex items-center justify-center rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-gray-500">
+                        <span class="sr-only">Open main menu</span>
+                        <i class="fas fa-bars"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="md:hidden hidden" id="mobile-menu">
+            <div class="px-2 pt-2 pb-3 space-y-1 sm:px-3">
+                {% if hotels_enabled %}
+                <a href="{% url 'hotels:search' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Hotels</a>
+                {% endif %}
+                <a href="{% url 'flights:search' %}" class="text-gray-900 block px-3 py-2 rounded-md text-base font-medium border-l-4 border-gray-600">Flights</a>
+                <a href="{% url 'cars:search' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Van Hire</a>
+                {% if user.is_staff %}
+                <a href="{% url 'dashboard:overview' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Dashboard</a>
+                {% endif %}
+                {% if user.is_authenticated %}
+                    <a href="{% url 'accounts:overview' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">My Account</a>
+                    <form method="post" action="{% url 'accounts:logout' %}" class="block">
+                        {% csrf_token %}
+                        <button type="submit" class="text-white bg-gray-600 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium w-full text-left">Logout</button>
+                    </form>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="text-gray-600 hover:text-gray-900 block px-3 py-2 rounded-md text-base font-medium">Login</a>
+                    <a href="{% url 'accounts:register' %}" class="text-white bg-gray-600 hover:bg-gray-700 block px-3 py-2 rounded-md text-base font-medium">Register</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+    
+    <main class="min-h-screen">
+        {% for message in messages %}
+            <div class="bg-blue-100 border-l-4 border-blue-500 text-blue-700 p-4 mb-4 mx-4">
+                {{ message }}
+            </div>
+        {% endfor %}
+        
+        <div class="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+            <div class="mb-8">
+                <a href="{% url 'flights:search' %}" class="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+                    <i class="fas fa-arrow-left mr-2"></i>Back to search
+                </a>
+                <h1 class="text-3xl md:text-4xl font-bold text-gray-800 mb-2">
+                    <i class="fas fa-plane mr-3 text-gray-600"></i>Book Flight {{ flight.code }}
+                </h1>
+                <p class="text-gray-600">{{ flight.origin }} → {{ flight.destination }} | Departs {{ flight.departure_time }}</p>
+            </div>
+            
+            <div class="grid lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-2">
+                    <div class="bg-white rounded-xl shadow-lg p-6">
+                        <h2 class="text-xl font-semibold text-gray-800 mb-6">Booking Details</h2>
+                        <form method="post" novalidate class="space-y-6" id="booking-form">
+                            {% csrf_token %}
+
+                            {% if form.non_field_errors %}
+                                <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg">
+                                    {{ form.non_field_errors.0 }}
+                                </div>
+                            {% endif %}
+
+                            <div>
+                                <label for="{{ form.contact_email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
+                                <input type="email" name="{{ form.contact_email.name }}" id="{{ form.contact_email.id_for_label }}" value="{{ form.contact_email.value|default:'' }}" placeholder="your@email.com" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
+                                {% if form.contact_email.errors %}
+                                    <p class="text-red-500 text-sm mt-1">{{ form.contact_email.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="bg-blue-50 border border-blue-100 text-blue-800 text-sm rounded-lg p-4">
+                                <i class="fas fa-info-circle mr-2"></i>
+                                Seats are assigned automatically based on availability. Just provide passenger details to continue to checkout.
+                            </div>
+
+                            <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-lg p-4">
+                                <i class="fas fa-lock mr-2"></i>
+                                Payment details will be collected securely on the next step after you confirm passenger information.
+                            </div>
+
+                            <div class="space-y-4">
+                                {% for passenger in form.passenger_fields %}
+                                    <div class="bg-gray-50 border border-gray-200 rounded-xl p-4">
+                                        <h3 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                                            <i class="fas fa-user-tag mr-2 text-gray-500"></i>Passenger {{ passenger.index }} details
+                                        </h3>
+                                        <div class="grid md:grid-cols-2 gap-4">
+                                            <div>
+                                                <label for="{{ passenger.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">{{ passenger.first_name.label }}</label>
+                                                {{ passenger.first_name }}
+                                                {% if passenger.first_name.errors %}
+                                                    <p class="text-red-500 text-sm mt-1">{{ passenger.first_name.errors.0 }}</p>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <label for="{{ passenger.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">{{ passenger.last_name.label }}</label>
+                                                {{ passenger.last_name }}
+                                                {% if passenger.last_name.errors %}
+                                                    <p class="text-red-500 text-sm mt-1">{{ passenger.last_name.errors.0 }}</p>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <label for="{{ passenger.contact_number.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">{{ passenger.contact_number.label }}</label>
+                                                {{ passenger.contact_number }}
+                                                {% if passenger.contact_number.errors %}
+                                                    <p class="text-red-500 text-sm mt-1">{{ passenger.contact_number.errors.0 }}</p>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <label for="{{ passenger.date_of_birth.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">{{ passenger.date_of_birth.label }}</label>
+                                                {{ passenger.date_of_birth }}
+                                                {% if passenger.date_of_birth.errors %}
+                                                    <p class="text-red-500 text-sm mt-1">{{ passenger.date_of_birth.errors.0 }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+
+                            <div class="flex items-center">
+                                <input type="checkbox" name="{{ form.notify_admin.name }}" id="{{ form.notify_admin.id_for_label }}" {% if form.notify_admin.value %}checked{% endif %} class="h-4 w-4 text-gray-600 focus:ring-gray-500 border-gray-300 rounded">
+                                <label for="{{ form.notify_admin.id_for_label }}" class="ml-2 block text-sm text-gray-700">Notify admin about this booking</label>
+                            </div>
+
+                            {% if form.flight_id %}
+                                {{ form.flight_id }}
+                            {% endif %}
+                            {% if form.passenger_count %}
+                                {{ form.passenger_count }}
+                            {% endif %}
+                            <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                                <div>
+                                    <p class="text-sm text-gray-600">Current estimate for {{ passenger_count }} passenger{{ passenger_count|pluralize }}:</p>
+                                    <p class="text-xs text-gray-500">Applies to automatically assigned seats and includes fees.</p>
+                                </div>
+                                <p class="text-xl font-semibold text-gray-900">${{ estimated_total|floatformat:2 }} <span class="text-sm text-gray-500">{{ currency_code }}</span></p>
+                            </div>
+                            <div class="pt-4">
+                                <button type="submit" class="w-full search-btn-custom text-white font-bold py-4 px-6 rounded-lg hover:shadow-lg transition-all">
+                                    <i class="fas fa-arrow-right mr-2"></i>Review and continue
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                
+                <div class="lg:col-span-1">
+                    <div class="bg-white rounded-xl shadow-lg p-6 sticky top-24">
+                        <h3 class="text-lg font-semibold text-gray-800 mb-4">Flight Summary</h3>
+                        
+                        <div class="space-y-4">
+                            <div class="border-b border-gray-200 pb-4">
+                                <div class="flex items-start">
+                                    <div class="bg-blue-100 p-2 rounded-lg mr-3 flex-shrink-0">
+                                        <i class="fas fa-plane text-blue-600"></i>
+                                    </div>
+                                <p class="text-xl font-semibold text-gray-900">${{ estimated_total|floatformat:2 }} <span class="text-sm text-gray-500">{{ currency_code }}</span></p>
+                                        <h4 class="font-semibold text-gray-800">{{ flight.code }}</h4>
+                                        <p class="text-sm text-gray-600">{{ flight.origin }} → {{ flight.destination }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="space-y-3">
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-calendar mr-2 w-4"></i>
+                                    <span>{{ flight.departure_time|date:"M d, Y" }}</span>
+                                </div>
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-clock mr-2 w-4"></i>
+                                    <span>Departs {{ flight.departure_time|time:"g:i A" }}</span>
+                                </div>
+                                <div class="flex items-center text-sm text-gray-600">
+                                    <i class="fas fa-clock mr-2 w-4"></i>
+                                    <span>Arrives {{ flight.arrival_time|time:"g:i A" }}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="border-t border-gray-200 pt-4">
+                                <div class="flex justify-between text-sm">
+                                    <span class="text-gray-600">Base fare:</span>
+                                    <span class="font-semibold">${{ flight.base_price }}</span>
+                                </div>
+                                <div class="flex justify-between text-sm mt-2">
+                                    <span class="text-gray-600">Passengers:</span>
+                                    <span class="font-semibold">{{ passenger_count }}</span>
+                                </div>
+                                {% if fare_breakdown %}
+                                    <div class="mt-4">
+                                        <p class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                            <i class="fas fa-receipt mr-2 text-gray-500"></i>Fare breakdown
+                                        </p>
+                                            <ul class="space-y-2 text-sm text-gray-600">
+                                                {% for fare in fare_breakdown %}
+                                                    <li class="flex justify-between">
+                                                        <span>
+                                                            {{ fare.label }}
+                                                            {% if fare.detail %}
+                                                                <span class="block text-xs text-gray-500">{{ fare.detail }}</span>
+                                                            {% endif %}
+                                                        </span>
+                                                        <span>${{ fare.price|floatformat:2 }}</span>
+                                                    </li>
+                                                {% endfor %}
+                                            </ul>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="border-t border-gray-200 pt-4">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-lg font-semibold text-gray-800">Estimated total ({{ currency_code }}):</span>
+                                    <span class="text-2xl font-bold text-gray-800">${{ estimated_total|floatformat:2 }}</span>
+                                </div>
+                                <p class="text-sm text-gray-500 mt-1">Final amount confirmed on payment. Taxes and fees included in estimate.</p>
+                                {% if fare_allocation_warning %}
+                                    <p class="text-xs text-red-500 mt-2 flex items-center">
+                                        <i class="fas fa-exclamation-triangle mr-2"></i>
+                                        Availability is limited. Totals may change if seats are taken before checkout.
+                                    </p>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t border-gray-200">
+        <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8 text-center text-sm text-gray-500">
+            <p>&copy; {% now "Y" %} WanderWise. All rights reserved. Need help? <a href="mailto:{{ support_email }}" class="text-gray-600 hover:text-gray-900">{{ support_email }}</a></p>
+        </div>
+    </footer>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const mobileMenuButton = document.getElementById('mobile-menu-button');
+            const mobileMenu = document.getElementById('mobile-menu');
+            if (mobileMenuButton) {
+                mobileMenuButton.addEventListener('click', () => {
+                    mobileMenu.classList.toggle('hidden');
+                });
+            }
+        });
+    </script>
+</body>
+</html>

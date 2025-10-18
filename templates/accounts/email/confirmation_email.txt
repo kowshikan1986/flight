@@ -1,0 +1,11 @@
+Hi {{ user.first_name|default:user.email }},
+
+Thanks for creating an account with {{ site_name }}. Before you can sign in, we just need to confirm your email address.
+
+Please click the link below to verify your account:
+{{ confirmation_url }}
+
+If you didn't create this account, you can safely ignore this email.
+
+See you soon,
+The {{ site_name }} team

@@ -1,0 +1,43 @@
+{% extends 'base.html' %}
+{% block title %}Flight {{ object.code }}{% endblock %}
+{% block content %}
+<section class="glass-panel rounded-3xl p-10 md:p-14 text-white shadow-2xl">
+	<div class="flex flex-col md:flex-row md:items-center md:justify-between gap-8">
+		<div class="space-y-5">
+			<div class="inline-flex items-center px-4 py-2 rounded-full bg-white/20 text-xs uppercase tracking-[0.35em]">Flight brief</div>
+			<h1 class="text-4xl md:text-5xl font-bold">{{ object.origin }} → {{ object.destination }}</h1>
+			<p class="text-blue-100 text-base md:text-lg">Flight {{ object.code }} operated by WanderWise partners. Track departure and arrival details at a glance.</p>
+			<div class="grid gap-4 md:grid-cols-2 text-sm md:text-base">
+				<div class="bg-white/10 rounded-2xl p-5 border border-white/20">
+					<h2 class="font-semibold text-white/90 mb-2"><i class="fas fa-plane-departure mr-2 text-emerald-300"></i>Departure</h2>
+					<p class="text-blue-100">{{ object.departure_time }}</p>
+				</div>
+				<div class="bg-white/10 rounded-2xl p-5 border border-white/20">
+					<h2 class="font-semibold text-white/90 mb-2"><i class="fas fa-plane-arrival mr-2 text-emerald-300"></i>Arrival</h2>
+					<p class="text-blue-100">{{ object.arrival_time }}</p>
+				</div>
+				{% if object.return_departure_time %}
+					<div class="bg-white/10 rounded-2xl p-5 border border-white/20 md:col-span-2">
+						<h2 class="font-semibold text-white/90 mb-2"><i class="fas fa-sync-alt mr-2 text-emerald-300"></i>Return leg</h2>
+						<p class="text-blue-100">{{ object.return_departure_time }} → {{ object.return_arrival_time }}</p>
+					</div>
+				{% endif %}
+			</div>
+		</div>
+		<div class="md:w-80">
+			<div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
+				<div class="px-6 py-8 text-slate-900 space-y-4">
+					<h2 class="text-xl font-semibold flex items-center"><i class="fas fa-ticket-alt text-emerald-500 mr-3"></i>Ready to board?</h2>
+					<p class="text-slate-600 text-sm">Secure your seats now with instant confirmation and free 24-hour cancel.</p>
+					<a href="{% url 'flights:book' object.id %}" class="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-emerald-600 text-white text-sm font-semibold hover:bg-emerald-700">
+						<i class="fas fa-plane mr-2"></i>Book this flight
+					</a>
+					<a href="{% url 'flights:search' %}" class="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl border border-slate-200 text-slate-700 text-sm font-semibold hover:border-slate-400">
+						Explore other routes
+					</a>
+				</div>
+			</div>
+		</div>
+	</div>
+</section>
+{% endblock %}

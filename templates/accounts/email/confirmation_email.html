@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Confirm your account</title>
+    <style>
+      body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1f2937; }
+      .container { max-width: 520px; margin: 0 auto; padding: 24px; background-color: #f9fafb; border-radius: 12px; }
+      h1 { color: #1e40af; }
+      a.button { display: inline-block; padding: 12px 24px; background: linear-gradient(135deg, #16a34a, #15803d); color: #fff; text-decoration: none; border-radius: 9999px; font-weight: 600; }
+      p { line-height: 1.6; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Confirm your email</h1>
+      <p>Hi {{ user.first_name|default:user.email }},</p>
+      <p>Welcome to {{ site_name }}! Please confirm your email address so you can start booking your next adventure.</p>
+      <p style="text-align: center; margin: 32px 0;">
+        <a class="button" href="{{ confirmation_url }}">Verify my email</a>
+      </p>
+      <p>If the button doesn't work, copy and paste this link into your browser:</p>
+      <p><a href="{{ confirmation_url }}">{{ confirmation_url }}</a></p>
+      <p>If you didn't request this account, feel free to ignore this email.</p>
+      <p>Safe travels,<br>The {{ site_name }} team</p>
+    </div>
+  </body>
+</html>
