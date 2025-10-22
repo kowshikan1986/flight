@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, time
 from decimal import Decimal
 
 from django.db import transaction
@@ -50,8 +50,7 @@ def mark_availability(car: Car, pickup_date: date, dropoff_date: date, is_availa
 
 
 def calculate_total_price(car: Car, pickup_date: date, dropoff_date: date) -> Decimal:
-    rental_days = (dropoff_date - pickup_date).days
-    return car.price_per_day * Decimal(rental_days)
+    return car.price_per_trip
 
 
 def create_booking(
@@ -62,6 +61,11 @@ def create_booking(
     dropoff_location: str,
     pickup_date: date,
     dropoff_date: date,
+    pickup_time: time | None,
+    pickup_address: str,
+    first_name: str,
+    last_name: str,
+    contact_number: str,
     contact_email: str,
     payment_token: str | None = None,
 ) -> CarBooking:
@@ -84,6 +88,11 @@ def create_booking(
                     'car_id': str(car.id),
                     'pickup_location': pickup_location,
                     'dropoff_location': dropoff_location,
+                    'pickup_time': pickup_time.strftime('%H:%M') if pickup_time else '',
+                    'first_name': first_name,
+                    'last_name': last_name,
+                    'contact_number': contact_number,
+                    'pickup_address': pickup_address,
                 },
                 payment_token=payment_token,
             )
@@ -99,6 +108,11 @@ def create_booking(
             dropoff_location=dropoff_location,
             pickup_date=pickup_date,
             dropoff_date=dropoff_date,
+            pickup_time=pickup_time,
+            pickup_address=pickup_address,
+            first_name=first_name,
+            last_name=last_name,
+            contact_number=contact_number,
             total_price=total_price,
             payment_status=(
                 CarBooking.PaymentStatus.SETTLED
@@ -117,11 +131,16 @@ def create_booking(
             result=payment,
         )
 
+    pickup_time_str = pickup_time.strftime('%H:%M') if pickup_time else 'TBC'
+
     send_booking_email(
         subject='Car rental confirmation',
         message=(
+            f'Dear {first_name} {last_name},\n\n'
             f'Your car rental for {car.company} {car.model} is confirmed from {pickup_date:%Y-%m-%d} '
-            f'to {dropoff_date:%Y-%m-%d}. Reference: {booking.reference_number}.'
+            f'to {dropoff_date:%Y-%m-%d} with pick-up at {pickup_time_str}. '
+            f'Pickup address: {pickup_address}. '
+            f'We will contact you at {contact_number} if needed.\n\nReference: {booking.reference_number}.'
         ),
         recipient_list=[contact_email],
     )

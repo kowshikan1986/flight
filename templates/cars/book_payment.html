@@ -1,0 +1,291 @@
+{% extends "base.html" %}
+
+{% block title %}Secure Payment - WanderWise{% endblock %}
+
+{% block extra_head %}
+<script src="https://js.stripe.com/v3/"></script>
+<style>
+    body {
+        background: #F5F3F0;
+    }
+    .primary-btn {
+        background-color: #4A5568;
+        transition: background-color 0.3s ease;
+    }
+    .primary-btn:hover {
+        background-color: #2D3748;
+    }
+    .flow-card {
+        background: #ffffff;
+        border-radius: 1rem;
+        box-shadow: 0 25px 50px -12px rgba(148, 163, 184, 0.35);
+        border: 1px solid rgba(148, 163, 184, 0.2);
+    }
+    .btn-spinner {
+        display: inline-flex;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="py-6 space-y-8">
+    <div>
+        <a href="{% url 'cars:book-review' car.id %}" class="inline-flex items-center text-gray-600 hover:text-gray-900 mb-4">
+            <i class="fas fa-arrow-left mr-2"></i>Back to review
+        </a>
+        <h1 class="text-3xl font-bold text-gray-800 mb-2">Secure payment</h1>
+        <p class="text-gray-600">Confirm your booking for {{ car.company }} {{ car.model }}.</p>
+    </div>
+
+    <div class="grid lg:grid-cols-3 gap-8">
+        <div class="lg:col-span-2 space-y-6">
+            <form method="post" class="flow-card p-6 space-y-6" id="payment-form" data-stripe-key="{{ stripe_publishable_key }}" data-contact-email="{{ booking_summary.contact_email }}">
+                {% csrf_token %}
+                {{ form.payment_token }}
+                <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
+                    <div>
+                        <p class="text-sm text-gray-600">Amount due at confirmation</p>
+                        <p class="text-xs text-gray-500">Includes trip rate and applicable taxes or fees</p>
+                    </div>
+                    <p class="text-xl font-semibold text-gray-900">${{ booking_summary.estimated_total|floatformat:2 }} <span class="text-sm text-gray-500">{{ booking_summary.currency_code }}</span></p>
+                </div>
+                {% if form.non_field_errors %}
+                    <div class="bg-red-50 border border-red-200 text-red-700 text-sm rounded-lg p-4">
+                        <ul class="space-y-1">
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                {% if stripe_publishable_key %}
+                    <section>
+                        <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-lock mr-2 text-gray-500"></i>Card details
+                        </h2>
+                        <div id="card-element" class="p-4 border border-gray-300 rounded-lg bg-white"></div>
+                        <div id="card-errors" class="text-sm text-red-500 mt-2"></div>
+                        <p class="text-xs text-gray-500 mt-3">We never store your card information. Your card will be charged once the booking is confirmed.</p>
+                    </section>
+
+                    <section class="pt-4">
+                        <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-address-card mr-2 text-gray-500"></i>Billing address</h2>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            {% for billing in form.billing_fields %}
+                                <div class="{% if billing.full_width %}md:col-span-2{% endif %}">
+                                    <label for="{{ billing.field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                        {{ billing.label }}{% if billing.optional %} <span class="text-xs text-gray-500">(optional)</span>{% endif %}
+                                    </label>
+                                    {{ billing.field }}
+                                    {% if billing.field.help_text %}
+                                        <p class="text-xs text-gray-500 mt-1">{{ billing.field.help_text }}</p>
+                                    {% endif %}
+                                    {% if billing.field.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ billing.field.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% else %}
+                    <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-lg p-4">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Stripe keys are not configured for this environment. Submitting this form will record the booking using the offline provider without charging a card.
+                    </div>
+                    <section class="pt-4">
+                        <h2 class="text-sm font-semibold text-gray-700 mb-3 flex items-center">
+                            <i class="fas fa-address-card mr-2 text-gray-500"></i>Billing address</h2>
+                        <div class="grid md:grid-cols-2 gap-4">
+                            {% for billing in form.billing_fields %}
+                                <div class="{% if billing.full_width %}md:col-span-2{% endif %}">
+                                    <label for="{{ billing.field.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">
+                                        {{ billing.label }}{% if billing.optional %} <span class="text-xs text-gray-500">(optional)</span>{% endif %}
+                                    </label>
+                                    {{ billing.field }}
+                                    {% if billing.field.help_text %}
+                                        <p class="text-xs text-gray-500 mt-1">{{ billing.field.help_text }}</p>
+                                    {% endif %}
+                                    {% if billing.field.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ billing.field.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </section>
+                {% endif %}
+
+                <div class="pt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                    <a href="{% url 'cars:book-review' car.id %}" class="inline-flex items-center justify-center px-4 py-3 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-50">
+                        <i class="fas fa-arrow-left mr-2"></i>Back
+                    </a>
+                    <button type="submit" id="payment-submit" class="primary-btn text-white font-bold py-3 px-6 rounded-lg hover:shadow-lg transition-all flex items-center justify-center gap-2"
+                            data-default-label="Confirm payment{% if booking_summary.estimated_total %} — ${{ booking_summary.estimated_total|floatformat:2 }}{% endif %}"
+                            data-processing-label="Processing...">
+                        <span class="btn-text">Confirm payment{% if booking_summary.estimated_total %} — ${{ booking_summary.estimated_total|floatformat:2 }}{% endif %}</span>
+                        <span class="btn-spinner hidden"><i class="fas fa-circle-notch fa-spin"></i></span>
+                        <i class="fas fa-credit-card"></i>
+                    </button>
+                </div>
+            </form>
+
+            <section class="flow-card p-6">
+                <h2 class="text-xl font-semibold text-gray-800 mb-4">Contact summary</h2>
+                <p class="text-gray-700"><span class="font-medium">Name:</span> {{ booking_summary.first_name }} {{ booking_summary.last_name }}</p>
+                <p class="text-gray-700"><span class="font-medium">Email:</span> {{ booking_summary.contact_email }}</p>
+                {% if booking_summary.contact_number %}
+                    <p class="text-gray-700"><span class="font-medium">Contact number:</span> {{ booking_summary.contact_number }}</p>
+                {% endif %}
+            </section>
+        </div>
+
+        <aside class="flow-card p-6 sticky top-24 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-800">Trip summary</h3>
+            <div class="border-b border-gray-200 pb-4">
+                <div class="flex items-start justify-between gap-4">
+                    <div class="flex items-start">
+                        <div class="bg-green-100 p-2 rounded-lg mr-3 flex-shrink-0">
+                            <i class="fas fa-van-shuttle text-green-600"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-semibold text-gray-800">{{ car.company }} {{ car.model }}</h4>
+                            <p class="text-sm text-gray-600">{{ car.category }}</p>
+                            <p class="text-xs text-gray-500">{{ booking_summary.pickup_location }} → {{ booking_summary.dropoff_location|default:booking_summary.pickup_location }}</p>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p class="text-xl font-semibold text-gray-900">${{ booking_summary.estimated_total|floatformat:2 }}</p>
+                        <p class="text-xs text-gray-500">{{ booking_summary.currency_code }}</p>
+                    </div>
+                </div>
+            </div>
+            <div class="space-y-2 text-sm text-gray-600">
+                <p class="flex justify-between"><span>Pick-up date:</span><span>{{ booking_summary.pickup_date|date:"M d, Y" }}</span></p>
+                {% if booking_summary.pickup_time %}
+                    <p class="flex justify-between"><span>Pick-up time:</span><span>{{ booking_summary.pickup_time|time:"g:i A" }}</span></p>
+                {% endif %}
+                <p class="flex justify-between"><span>Drop-off date:</span><span>{{ booking_summary.dropoff_date|date:"M d, Y" }}</span></p>
+                <p class="flex justify-between"><span>Duration:</span><span>{{ booking_summary.duration_days }} day{{ booking_summary.duration_days|pluralize }}</span></p>
+                <p class="flex justify-between"><span>Seats:</span><span>{{ car.seats }}</span></p>
+                {% if car.luggage_capacity %}
+                    <p class="flex justify-between"><span>Luggage capacity:</span><span>{{ car.luggage_capacity }}</span></p>
+                {% endif %}
+                <p class="flex justify-between font-semibold text-gray-800"><span>Estimated total:</span><span>${{ booking_summary.estimated_total|floatformat:2 }}</span></p>
+                <p class="text-xs text-gray-500">Final amount confirmed when the charge succeeds.</p>
+            </div>
+            {% if booking_summary.pickup_address %}
+                <div class="border-t border-gray-200 pt-4 text-sm text-gray-600">
+                    <p class="font-semibold text-gray-800 flex items-center"><i class="fas fa-map-signs mr-2 text-gray-500"></i>Pick-up address</p>
+                    <p>{{ booking_summary.pickup_address }}</p>
+                </div>
+            {% endif %}
+        </aside>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const paymentForm = document.getElementById('payment-form');
+        if (!paymentForm) {
+            return;
+        }
+
+        const stripeKey = paymentForm.dataset.stripeKey;
+        const submitButton = document.getElementById('payment-submit');
+        const tokenInput = document.getElementById('id_payment_token');
+        const cardErrors = document.getElementById('card-errors');
+
+        const submitText = submitButton?.querySelector('.btn-text');
+        const submitSpinner = submitButton?.querySelector('.btn-spinner');
+        const submitIcon = submitButton?.querySelector('.fa-credit-card');
+        const defaultLabel = submitButton?.dataset.defaultLabel || 'Confirm payment';
+        const processingLabel = submitButton?.dataset.processingLabel || 'Processing...';
+
+        const setProcessingState = (isProcessing) => {
+            if (!submitButton) {
+                return;
+            }
+            submitButton.disabled = isProcessing;
+            submitButton.classList.toggle('opacity-60', isProcessing);
+            submitButton.classList.toggle('cursor-not-allowed', isProcessing);
+            if (submitText) {
+                submitText.textContent = isProcessing ? processingLabel : defaultLabel;
+            }
+            if (submitSpinner) {
+                submitSpinner.classList.toggle('hidden', !isProcessing);
+            }
+            if (submitIcon) {
+                submitIcon.classList.toggle('hidden', isProcessing);
+            }
+        };
+
+        if (stripeKey) {
+            const stripe = Stripe(stripeKey);
+            const elements = stripe.elements({ appearance: { theme: 'stripe' } });
+            const card = elements.create('card', {
+                hidePostalCode: true,
+                style: {
+                    base: {
+                        color: '#1f2937',
+                        fontFamily: '"Inter", system-ui, sans-serif',
+                        fontSize: '16px',
+                        '::placeholder': { color: '#9ca3af' },
+                    },
+                },
+            });
+            const cardElement = document.getElementById('card-element');
+            card.mount(cardElement);
+
+            paymentForm.addEventListener('submit', async (event) => {
+                if (paymentForm.dataset.paymentReady === 'true') {
+                    return;
+                }
+                event.preventDefault();
+                cardErrors.textContent = '';
+                setProcessingState(true);
+
+                try {
+                    const { paymentMethod, error } = await stripe.createPaymentMethod({
+                        type: 'card',
+                        card,
+                        billing_details: {
+                            email: paymentForm.dataset.contactEmail || undefined,
+                        },
+                    });
+
+                    if (error) {
+                        cardErrors.textContent = error.message || 'We could not authorize this card.';
+                        setProcessingState(false);
+                        return;
+                    }
+
+                    if (!paymentMethod || !paymentMethod.id) {
+                        cardErrors.textContent = 'We could not authorize this card.';
+                        setProcessingState(false);
+                        return;
+                    }
+
+                    if (tokenInput) {
+                        tokenInput.value = paymentMethod.id;
+                    }
+                    paymentForm.dataset.paymentReady = 'true';
+                    paymentForm.submit();
+                } catch (err) {
+                    console.error(err);
+                    cardErrors.textContent = 'An unexpected error occurred. Please try again.';
+                    setProcessingState(false);
+                }
+            });
+        } else {
+            paymentForm.addEventListener('submit', () => {
+                if (submitButton) {
+                    setProcessingState(true);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

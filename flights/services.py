@@ -5,11 +5,11 @@ from __future__ import annotations
 import logging
 from dataclasses import dataclass
 from datetime import date, datetime
-from decimal import Decimal
+from decimal import Decimal, InvalidOperation, ROUND_CEILING
 from typing import Any, Iterable
 
 from django.db import transaction
-from django.db.models import Prefetch, Count, Q
+from django.db.models import Count, Prefetch, Q
 
 from core.models import AvailabilityError, send_booking_email
 from payments.services import charge_booking, notify_admins, store_payment_record
@@ -27,37 +27,122 @@ class SeatSelection:
     price: Decimal
 
 
+OVERWEIGHT_INCLUDED_KG = Decimal('40')
+HAND_LUGGAGE_LIMIT_KG = Decimal('7')
+OVERWEIGHT_FEE_PER_KG = Decimal('20')
+
+
+def normalize_weight_input(value: Any) -> Decimal:
+    if value in (None, ''):
+        return Decimal('0.00')
+    try:
+        decimal_value = Decimal(str(value))
+    except (InvalidOperation, TypeError, ValueError):
+        return Decimal('0.00')
+    if decimal_value < 0:
+        return Decimal('0.00')
+    return decimal_value.quantize(Decimal('0.01'))
+
+
+def calculate_luggage_overweight_fee(main_luggage_weight: Decimal) -> Decimal:
+    overweight = main_luggage_weight - OVERWEIGHT_INCLUDED_KG
+    if overweight <= 0:
+        return Decimal('0.00')
+    chargeable_kg = overweight.to_integral_value(rounding=ROUND_CEILING)
+    fee = chargeable_kg * OVERWEIGHT_FEE_PER_KG
+    return fee.quantize(Decimal('0.01'))
+
+
+
+def _airport_variants(value: str | None) -> set[str]:
+    """Return a set of common label variations for an airport string."""
+    raw_value = (value or '').strip()
+    if not raw_value:
+        return set()
+    normalized = raw_value.replace(' )', ')')
+    normalized = ' '.join(normalized.split())
+    variants: set[str] = {raw_value, normalized}
+    if ')' in raw_value:
+        variants.add(raw_value.replace(')', ' )'))
+        variants.add(raw_value.replace(' )', ')'))
+    if ')' in normalized:
+        variants.add(normalized.replace(')', ' )'))
+    return {variant.strip() for variant in variants if variant}
+
+
 def search_flights(
     *,
     origin: str,
     destination: str,
     departure_date: datetime,
     return_date: datetime | None = None,
+    return_origin: str | None = None,
+    return_destination: str | None = None,
     passenger_count: int = 1,
 ) -> Iterable[Flight]:
+    outbound_seats_qs = FlightSeat.objects.filter(leg=FlightSeat.Leg.OUTBOUND).order_by('seat_number')
     queryset = (
         Flight.objects.filter(
-            origin__icontains=origin,
-            destination__icontains=destination,
             departure_time__date=departure_date.date(),
             is_active=True,
         )
-        .prefetch_related(Prefetch('seats', queryset=FlightSeat.objects.order_by('seat_number')))
+        .prefetch_related(Prefetch('seats', queryset=outbound_seats_qs))
         .annotate(
-            available_seat_count=Count('seats', filter=Q(seats__is_reserved=False))
+            available_seat_count=Count(
+                'seats',
+                filter=Q(seats__is_reserved=False, seats__leg=FlightSeat.Leg.OUTBOUND),
+            )
         )
         .filter(available_seat_count__gte=max(1, min(7, passenger_count)))
         .order_by('departure_time')
     )
+    origin_variants = _airport_variants(origin) or {origin}
+    origin_clause = Q()
+    for variant in origin_variants:
+        origin_clause |= Q(origin__icontains=variant)
+    queryset = queryset.filter(origin_clause)
+    destination_variants = _airport_variants(destination) or {destination}
+    destination_clause = Q()
+    for variant in destination_variants:
+        destination_clause |= Q(destination__icontains=variant)
+    queryset = queryset.filter(destination_clause)
     if return_date:
-        queryset = queryset.filter(return_departure_time__date=return_date.date())
+        return_date_value = return_date.date()
+        queryset = queryset.filter(
+            Q(return_departure_time__isnull=True)
+            | Q(return_departure_time__date__gte=return_date_value)
+        )
+    if return_origin:
+        return_origin_variants = {
+            variant for variant in (_airport_variants(return_origin) or {return_origin}) if variant
+        }
+        if return_origin_variants:
+            return_origin_clause = Q(return_origin__isnull=True) | Q(return_origin__exact='')
+            for variant in return_origin_variants:
+                return_origin_clause |= Q(return_origin__icontains=variant)
+            queryset = queryset.filter(return_origin_clause)
+    if return_destination:
+        return_destination_variants = {
+            variant for variant in (_airport_variants(return_destination) or {return_destination}) if variant
+        }
+        if return_destination_variants:
+            return_destination_clause = Q(return_destination__isnull=True) | Q(return_destination__exact='')
+            for variant in return_destination_variants:
+                return_destination_clause |= Q(return_destination__icontains=variant)
+            queryset = queryset.filter(return_destination_clause)
     return queryset
 
 
-def calculate_total_price(seats: Iterable[FlightSeat], base_price: Decimal) -> Decimal:
+def calculate_total_price(
+    seats: Iterable[FlightSeat],
+    base_price: Decimal,
+    return_base_price: Decimal | None = None,
+) -> Decimal:
     total = Decimal('0.0')
+    return_component = (return_base_price or Decimal('0.00')).quantize(Decimal('0.01'))
     for seat in seats:
-        total += base_price * seat.price_modifier
+        seat_price = (base_price * seat.price_modifier).quantize(Decimal('0.01'))
+        total += seat_price + return_component
     return total.quantize(Decimal('0.01'))
 
 
@@ -88,13 +173,14 @@ def create_booking(
     passenger_count = max(1, passenger_count)
     seats = list(
         FlightSeat.objects
-        .filter(flight=flight, is_reserved=False)
+        .filter(flight=flight, is_reserved=False, leg=FlightSeat.Leg.OUTBOUND)
         .order_by('seat_number')[:passenger_count]
     )
     if len(seats) < passenger_count:
         raise AvailabilityError({'seats': 'Not enough seats remaining for this booking'})
 
     passenger_detail_list: list[dict[str, Any]] = []
+    luggage_fees: list[Decimal] = []
     if passenger_details is not None:
         if len(passenger_details) != len(seats):
             raise AvailabilityError({'passengers': 'Passenger details do not match selected seats'})
@@ -119,16 +205,29 @@ def create_booking(
             if dob_value > today_value:
                 raise AvailabilityError({'passengers': f'Passenger {index} date of birth cannot be in the future.'})
 
+            main_weight = normalize_weight_input(detail.get('main_luggage_weight'))
+            hand_weight = normalize_weight_input(detail.get('hand_luggage_weight'))
+            if hand_weight > HAND_LUGGAGE_LIMIT_KG:
+                raise AvailabilityError({'passengers': f'Passenger {index} hand luggage exceeds {HAND_LUGGAGE_LIMIT_KG}kg limit.'})
+            luggage_fee = calculate_luggage_overweight_fee(main_weight)
+            luggage_fees.append(luggage_fee)
+
             passenger_detail_list.append({
                 'first_name': first_name,
                 'last_name': last_name,
                 'contact_number': (detail.get('contact_number') or '').strip(),
                 'date_of_birth': dob_value,
+                'main_luggage_weight': main_weight,
+                'hand_luggage_weight': hand_weight,
+                'luggage_fee': luggage_fee,
             })
     else:
         passenger_detail_list = []
 
-    total_price = calculate_total_price(seats, flight.base_price)
+    return_component = getattr(flight, 'return_base_price', None)
+    base_total = calculate_total_price(seats, flight.base_price, return_component)
+    luggage_total = sum(luggage_fees, Decimal('0.00')).quantize(Decimal('0.01'))
+    total_price = (base_total + luggage_total).quantize(Decimal('0.01'))
 
     with transaction.atomic():
         reserve_seats(seats)
@@ -176,6 +275,9 @@ def create_booking(
                     passenger_last_name=detail.get('last_name', ''),
                     passenger_contact_number=detail.get('contact_number', ''),
                     passenger_date_of_birth=detail.get('date_of_birth'),
+                    main_luggage_weight=detail.get('main_luggage_weight', Decimal('0.00')),
+                    hand_luggage_weight=detail.get('hand_luggage_weight', Decimal('0.00')),
+                    luggage_fee=detail.get('luggage_fee', Decimal('0.00')),
                 )
             )
 

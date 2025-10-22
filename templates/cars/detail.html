@@ -22,8 +22,10 @@
 			<div class="bg-white rounded-3xl shadow-2xl overflow-hidden">
 				<img src="https://images.unsplash.com/photo-1551739440-5ee1e0d90b84?w=900&h=600&fit=crop" alt="{{ object.company }} {{ object.model }}" class="w-full h-48 object-cover">
 				<div class="p-6 space-y-4 text-slate-900">
-					<div class="text-sm text-slate-500 uppercase tracking-wide">Daily rate</div>
-					<div class="text-3xl font-bold">${{ object.price_per_day }}<span class="text-base font-medium text-slate-500"> / day</span></div>
+					<div class="text-xs text-slate-500 uppercase tracking-wide">Route</div>
+					<p class="text-sm font-semibold text-slate-700">{{ object.pickup_location|default:'N/A' }} → {{ object.dropoff_location|default:'N/A' }}</p>
+					<div class="text-sm text-slate-500 uppercase tracking-wide">Trip rate</div>
+					<div class="text-3xl font-bold">${{ object.price_per_trip }}<span class="text-base font-medium text-slate-500"> / trip</span></div>
 					<a href="{% url 'cars:book' object.id %}" class="inline-flex items-center justify-center w-full px-5 py-3 rounded-xl bg-amber-500 text-white text-sm font-semibold hover:bg-amber-600">
 						<i class="fas fa-key mr-2"></i>Hire this van
 					</a>

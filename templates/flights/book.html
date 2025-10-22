@@ -119,6 +119,9 @@
                     <i class="fas fa-plane mr-3 text-gray-600"></i>Book Flight {{ flight.code }}
                 </h1>
                 <p class="text-gray-600">{{ flight.origin }} → {{ flight.destination }} | Departs {{ flight.departure_time }}</p>
+                {% if has_return_leg and return_departure_time %}
+                    <p class="text-gray-600">Return {{ return_route }} | Departs {{ return_departure_time }}</p>
+                {% endif %}
             </div>
             
             <div class="grid lg:grid-cols-3 gap-8">
@@ -150,6 +153,11 @@
                             <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-lg p-4">
                                 <i class="fas fa-lock mr-2"></i>
                                 Payment details will be collected securely on the next step after you confirm passenger information.
+                            </div>
+
+                            <div class="bg-green-50 border border-green-200 text-green-800 text-sm rounded-lg p-4">
+                                <i class="fas fa-suitcase-rolling mr-2"></i>
+                                Each passenger includes {{ included_luggage_allowance|floatformat:0 }} kg of checked luggage. Extra weight is charged at $20 per kg. Hand luggage is limited to {{ carry_on_limit|floatformat:0 }} kg.
                             </div>
 
                             <div class="space-y-4">
@@ -188,6 +196,24 @@
                                                 {% endif %}
                                             </div>
                                         </div>
+                                        <div class="grid md:grid-cols-2 gap-4 mt-4">
+                                            <div>
+                                                <label for="{{ passenger.main_luggage_weight.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">{{ passenger.main_luggage_weight.label }}</label>
+                                                {{ passenger.main_luggage_weight }}
+                                                <p class="text-xs text-gray-500 mt-1">Up to {{ included_luggage_allowance|floatformat:0 }} kg included. Extra weight costs $20 per kg.</p>
+                                                {% if passenger.main_luggage_weight.errors %}
+                                                    <p class="text-red-500 text-sm mt-1">{{ passenger.main_luggage_weight.errors.0 }}</p>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <label for="{{ passenger.hand_luggage_weight.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">{{ passenger.hand_luggage_weight.label }}</label>
+                                                {{ passenger.hand_luggage_weight }}
+                                                <p class="text-xs text-gray-500 mt-1">Must not exceed {{ carry_on_limit|floatformat:0 }} kg.</p>
+                                                {% if passenger.hand_luggage_weight.errors %}
+                                                    <p class="text-red-500 text-sm mt-1">{{ passenger.hand_luggage_weight.errors.0 }}</p>
+                                                {% endif %}
+                                            </div>
+                                        </div>
                                     </div>
                                 {% endfor %}
                             </div>
@@ -206,7 +232,7 @@
                             <div class="bg-gray-50 border border-gray-200 rounded-lg p-4 flex items-center justify-between">
                                 <div>
                                     <p class="text-sm text-gray-600">Current estimate for {{ passenger_count }} passenger{{ passenger_count|pluralize }}:</p>
-                                    <p class="text-xs text-gray-500">Applies to automatically assigned seats and includes fees.</p>
+                                    <p class="text-xs text-gray-500">Applies to automatically assigned seats and includes baggage surcharges if applicable.</p>
                                 </div>
                                 <p class="text-xl font-semibold text-gray-900">${{ estimated_total|floatformat:2 }} <span class="text-sm text-gray-500">{{ currency_code }}</span></p>
                             </div>
@@ -225,30 +251,61 @@
                         
                         <div class="space-y-4">
                             <div class="border-b border-gray-200 pb-4">
-                                <div class="flex items-start">
-                                    <div class="bg-blue-100 p-2 rounded-lg mr-3 flex-shrink-0">
-                                        <i class="fas fa-plane text-blue-600"></i>
+                                <div class="flex items-start justify-between gap-4">
+                                    <div class="flex items-start">
+                                        <div class="bg-blue-100 p-2 rounded-lg mr-3 flex-shrink-0">
+                                            <i class="fas fa-plane text-blue-600"></i>
+                                        </div>
+                                        <div>
+                                            <h4 class="font-semibold text-gray-800">{{ flight.code }}</h4>
+                                            <p class="text-sm text-gray-600">{{ flight.origin }} → {{ flight.destination }}</p>
+                                            {% if has_return_leg %}
+                                                <p class="text-xs text-gray-500">Return {{ return_route }}{% if return_flight_code %} · Flight {{ return_flight_code }}{% endif %}</p>
+                                            {% endif %}
+                                        </div>
                                     </div>
-                                <p class="text-xl font-semibold text-gray-900">${{ estimated_total|floatformat:2 }} <span class="text-sm text-gray-500">{{ currency_code }}</span></p>
-                                        <h4 class="font-semibold text-gray-800">{{ flight.code }}</h4>
-                                        <p class="text-sm text-gray-600">{{ flight.origin }} → {{ flight.destination }}</p>
+                                    <div class="text-right">
+                                        <p class="text-xl font-semibold text-gray-900">${{ estimated_total|floatformat:2 }}</p>
+                                        <p class="text-xs text-gray-500">{{ currency_code }}</p>
                                     </div>
                                 </div>
                             </div>
-                            
                             <div class="space-y-3">
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <i class="fas fa-calendar mr-2 w-4"></i>
-                                    <span>{{ flight.departure_time|date:"M d, Y" }}</span>
+                                <div class="border border-gray-200 rounded-lg p-4">
+                                    <div class="flex items-center justify-between text-xs uppercase tracking-wide text-gray-500">
+                                        <span>Departure flight</span>
+                                        <span>Flight {{ flight.code }}</span>
+                                    </div>
+                                    <p class="mt-2 text-sm font-semibold text-gray-800">{{ flight.origin }} → {{ flight.destination }}</p>
+                                    <ul class="mt-3 space-y-1 text-sm text-gray-600">
+                                        <li class="flex items-center"><i class="fas fa-calendar-day mr-2 w-4"></i><span>{{ flight.departure_time|date:"M d, Y" }}</span></li>
+                                        <li class="flex items-center"><i class="fas fa-plane-departure mr-2 w-4"></i><span>Departs {{ flight.departure_time|time:"g:i A" }}</span></li>
+                                        <li class="flex items-center"><i class="fas fa-plane-arrival mr-2 w-4"></i><span>Arrives {{ flight.arrival_time|time:"g:i A" }}</span></li>
+                                    </ul>
                                 </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <i class="fas fa-clock mr-2 w-4"></i>
-                                    <span>Departs {{ flight.departure_time|time:"g:i A" }}</span>
-                                </div>
-                                <div class="flex items-center text-sm text-gray-600">
-                                    <i class="fas fa-clock mr-2 w-4"></i>
-                                    <span>Arrives {{ flight.arrival_time|time:"g:i A" }}</span>
-                                </div>
+                                {% if has_return_leg %}
+                                    {% if return_departure_time or return_route %}
+                                    <div class="border border-gray-200 rounded-lg p-4">
+                                        <div class="flex items-center justify-between text-xs uppercase tracking-wide text-gray-500">
+                                            <span>Return flight</span>
+                                            <span>Flight {{ return_flight_code|default:flight.code }}</span>
+                                        </div>
+                                        <p class="mt-2 text-sm font-semibold text-gray-800">{{ return_route }}</p>
+                                        <ul class="mt-3 space-y-1 text-sm text-gray-600">
+                                            {% if return_departure_time %}
+                                                <li class="flex items-center"><i class="fas fa-calendar-day mr-2 w-4"></i><span>{{ return_departure_time|date:"M d, Y" }}</span></li>
+                                                <li class="flex items-center"><i class="fas fa-plane-departure mr-2 w-4"></i><span>Departs {{ return_departure_time|time:"g:i A" }}</span></li>
+                                            {% endif %}
+                                            {% if return_arrival_time %}
+                                                <li class="flex items-center"><i class="fas fa-plane-arrival mr-2 w-4"></i><span>Arrives {{ return_arrival_time|time:"g:i A" }}</span></li>
+                                            {% endif %}
+                                        </ul>
+                                        {% if return_is_alternate_date and requested_return_date %}
+                                            <p class="mt-3 text-xs text-amber-600 flex items-start"><i class="fas fa-info-circle mr-2 mt-0.5"></i><span>Requested {{ requested_return_date|date:"M d, Y" }}, selected return departs {{ return_departure_time|date:"M d, Y" }}.</span></p>
+                                        {% endif %}
+                                    </div>
+                                    {% endif %}
+                                {% endif %}
                             </div>
                             
                             <div class="border-t border-gray-200 pt-4">
@@ -260,6 +317,12 @@
                                     <span class="text-gray-600">Passengers:</span>
                                     <span class="font-semibold">{{ passenger_count }}</span>
                                 </div>
+                                {% if has_return_leg and return_fare and return_fare > 0 %}
+                                    <div class="flex justify-between text-sm mt-2">
+                                        <span class="text-gray-600">Return fare:</span>
+                                        <span class="font-semibold">${{ return_fare|floatformat:2 }}</span>
+                                    </div>
+                                {% endif %}
                                 {% if fare_breakdown %}
                                     <div class="mt-4">
                                         <p class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
@@ -278,6 +341,26 @@
                                                     </li>
                                                 {% endfor %}
                                             </ul>
+                                    </div>
+                                {% endif %}
+                                {% if luggage_summary %}
+                                    <div class="mt-4">
+                                        <p class="text-sm font-semibold text-gray-700 mb-2 flex items-center">
+                                            <i class="fas fa-suitcase-rolling mr-2 text-gray-500"></i>Baggage summary
+                                        </p>
+                                        <ul class="space-y-2 text-sm text-gray-600">
+                                            {% for bag in luggage_summary %}
+                                                <li>
+                                                    Passenger {{ bag.index }}: Checked {{ bag.main_weight|floatformat:1 }} kg
+                                                    {% if bag.luggage_fee > 0 %}
+                                                        <span class="text-red-600">({{ bag.chargeable_overweight_kg }} kg over &middot; ${{ bag.luggage_fee|floatformat:2 }} surcharge)</span>
+                                                    {% else %}
+                                                        (within allowance)
+                                                    {% endif %}
+                                                    &middot; Hand {{ bag.hand_weight|floatformat:1 }} kg
+                                                </li>
+                                            {% endfor %}
+                                        </ul>
                                     </div>
                                 {% endif %}
                             </div>

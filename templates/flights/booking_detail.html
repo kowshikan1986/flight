@@ -8,36 +8,91 @@
         <p class="mt-2 text-emerald-100 text-sm md:text-base">Share this code with the airline desk for faster check-in.</p>
     </div>
     <div class="px-8 py-10 space-y-8">
-        <div class="grid gap-6 md:grid-cols-2">
-            <article class="rounded-2xl border border-slate-200 p-6">
-                <h2 class="text-lg font-semibold text-slate-900 mb-4 flex items-center"><i class="fas fa-plane-departure text-emerald-500 mr-3"></i>Flight info</h2>
-                <dl class="space-y-3 text-sm md:text-base text-slate-600">
-                    <div class="flex items-center justify-between">
-                        <dt class="font-medium text-slate-500">Flight</dt>
-                        <dd class="text-slate-900">{{ object.flight.code }}</dd>
-                    </div>
-                    <div class="flex items-center justify-between">
-                        <dt class="font-medium text-slate-500">Route</dt>
-                        <dd class="text-slate-900">{{ object.flight.origin }} → {{ object.flight.destination }}</dd>
-                    </div>
+        {% with flight=object.flight %}
+        <div class="grid gap-6 lg:grid-cols-3">
+            <article class="rounded-2xl border border-slate-200 p-6 lg:col-span-2 space-y-6">
+                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
                     <div>
-                        <dt class="font-medium text-slate-500 mb-1">Seats</dt>
-                        <dd class="text-slate-900">
-                            {% for seat in object.seats.all %}
-                                <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold mr-2 mb-2">{{ seat.seat_number }}</span>
-                            {% empty %}
-                                <span class="text-slate-500">Not assigned</span>
-                            {% endfor %}
-                        </dd>
+                        <h2 class="text-lg font-semibold text-slate-900 flex items-center gap-3"><i class="fas fa-plane-departure text-emerald-500"></i>Flight summary</h2>
+                        <p class="text-sm text-slate-600 mt-1">Flight {{ flight.code }} · {{ flight.origin }} → {{ flight.destination }}</p>
+                        {% if flight.return_origin and flight.return_destination %}
+                            <p class="text-xs text-slate-500 mt-1">Return {{ flight.return_origin }} → {{ flight.return_destination }}{% if flight.return_code %} · Flight {{ flight.return_code }}{% endif %}</p>
+                        {% endif %}
                     </div>
-                </dl>
+                    <div class="text-right">
+                        <p class="text-2xl font-semibold text-slate-900">${{ object.total_price|floatformat:2 }}</p>
+                        <p class="text-xs text-slate-500 uppercase tracking-wide">Total paid</p>
+                    </div>
+                </div>
+                <div class="grid md:grid-cols-2 gap-4">
+                    <div class="rounded-xl border border-slate-200 p-4 bg-slate-50/60">
+                        <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
+                            <span>Departure flight</span>
+                            <span>Flight {{ flight.code }}</span>
+                        </div>
+                        <p class="mt-2 text-sm font-semibold text-slate-900">{{ flight.origin }} → {{ flight.destination }}</p>
+                        <ul class="mt-3 space-y-2 text-sm text-slate-600">
+                            <li class="flex items-center gap-2"><i class="fas fa-calendar-day text-emerald-500"></i><span>{{ flight.departure_time|date:"M d, Y" }}</span></li>
+                            <li class="flex items-center gap-2"><i class="fas fa-clock text-emerald-500"></i><span>Departs {{ flight.departure_time|time:"g:i A" }}</span></li>
+                            <li class="flex items-center gap-2"><i class="fas fa-plane-arrival text-emerald-500"></i><span>Arrives {{ flight.arrival_time|time:"g:i A" }}</span></li>
+                        </ul>
+                    </div>
+                    {% if flight.return_departure_time %}
+                        <div class="rounded-xl border border-slate-200 p-4 bg-slate-50/60">
+                            <div class="flex items-center justify-between text-xs font-semibold uppercase tracking-wide text-slate-500">
+                                <span>Return flight</span>
+                                <span>Flight {{ flight.return_code|default:flight.code }}</span>
+                            </div>
+                            <p class="mt-2 text-sm font-semibold text-slate-900">{{ flight.return_origin|default:flight.destination }} → {{ flight.return_destination|default:flight.origin }}</p>
+                            <ul class="mt-3 space-y-2 text-sm text-slate-600">
+                                <li class="flex items-center gap-2"><i class="fas fa-calendar-day text-emerald-500"></i><span>{{ flight.return_departure_time|date:"M d, Y" }}</span></li>
+                                <li class="flex items-center gap-2"><i class="fas fa-clock text-emerald-500"></i><span>Departs {{ flight.return_departure_time|time:"g:i A" }}</span></li>
+                                {% if flight.return_arrival_time %}
+                                    <li class="flex items-center gap-2"><i class="fas fa-plane-arrival text-emerald-500"></i><span>Arrives {{ flight.return_arrival_time|time:"g:i A" }}</span></li>
+                                {% endif %}
+                            </ul>
+                        </div>
+                    {% endif %}
+                </div>
+                <div class="border-t border-slate-200 pt-4">
+                    <dl class="grid gap-3 md:grid-cols-2 text-sm text-slate-600">
+                        <div class="flex items-center justify-between md:justify-start md:gap-4">
+                            <dt class="font-medium text-slate-500">Passengers</dt>
+                            <dd class="text-slate-900 font-semibold">{{ object.passengers }}</dd>
+                        </div>
+                        {% with seat_list=object.seats.all %}
+                        <div class="md:col-span-2">
+                            <dt class="font-medium text-slate-500 mb-1">Seats</dt>
+                            <dd class="text-slate-900">
+                                {% if seat_list %}
+                                    {% for seat in seat_list %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-emerald-100 text-emerald-700 text-xs font-semibold mr-2 mb-2">{{ seat.seat_number }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-slate-400">Not assigned</span>
+                                {% endif %}
+                            </dd>
+                        </div>
+                        {% endwith %}
+                        <div class="flex items-center justify-between md:justify-start md:gap-4">
+                            <dt class="font-medium text-slate-500">Base fare / pax</dt>
+                            <dd class="text-slate-900">${{ flight.base_price|floatformat:2 }}</dd>
+                        </div>
+                        {% if flight.return_base_price %}
+                            <div class="flex items-center justify-between md:justify-start md:gap-4">
+                                <dt class="font-medium text-slate-500">Return fare / pax</dt>
+                                <dd class="text-slate-900">${{ flight.return_base_price|floatformat:2 }}</dd>
+                            </div>
+                        {% endif %}
+                    </dl>
+                </div>
             </article>
-            <article class="rounded-2xl border border-slate-200 p-6">
-                <h2 class="text-lg font-semibold text-slate-900 mb-4 flex items-center"><i class="fas fa-ticket-alt text-indigo-500 mr-3"></i>Payment & status</h2>
+            <article class="rounded-2xl border border-slate-200 p-6 space-y-4">
+                <h2 class="text-lg font-semibold text-slate-900 flex items-center gap-3"><i class="fas fa-ticket-alt text-indigo-500"></i>Payment & status</h2>
                 <dl class="space-y-3 text-sm md:text-base text-slate-600">
                     <div class="flex items-center justify-between">
-                        <dt class="font-medium text-slate-500">Total</dt>
-                        <dd class="text-slate-900 text-xl font-semibold">${{ object.total_price }}</dd>
+                        <dt class="font-medium text-slate-500">Total paid</dt>
+                        <dd class="text-slate-900 text-xl font-semibold">${{ object.total_price|floatformat:2 }}</dd>
                     </div>
                     <div class="flex items-center justify-between">
                         <dt class="font-medium text-slate-500">Booking status</dt>
@@ -47,13 +102,65 @@
                         <dt class="font-medium text-slate-500">Payment status</dt>
                         <dd class="text-slate-900">{{ object.payment_status|title }}</dd>
                     </div>
+                    <div class="flex items-center justify-between">
+                        <dt class="font-medium text-slate-500">Payment reference</dt>
+                        <dd class="text-slate-900 text-xs md:text-sm font-mono">{{ object.payment_reference|default:'—' }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <dt class="font-medium text-slate-500">Booked on</dt>
+                        <dd class="text-slate-900">{{ object.created_at|date:"M d, Y" }} at {{ object.created_at|time:"g:i A" }}</dd>
+                    </div>
+                    <div>
+                        <dt class="font-medium text-slate-500">Contact email</dt>
+                        <dd class="text-slate-900">{{ object.contact_email }}</dd>
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <dt class="font-medium text-slate-500">Notify admin</dt>
+                        <dd class="text-slate-900">{{ object.notify_admin|yesno:"Yes,No" }}</dd>
+                    </div>
                 </dl>
-                <div class="mt-6 rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
+                <div class="rounded-xl bg-slate-50 p-4 text-sm text-slate-600">
                     <i class="fas fa-info-circle text-emerald-500 mr-2"></i>
                     Questions? Email <a href="mailto:{{ support_email|default:'support@wanderwise.com' }}" class="text-emerald-600 font-semibold">{{ support_email|default:'support@wanderwise.com' }}</a> with your reference code.
                 </div>
             </article>
         </div>
+        {% with assignments=object.flightbookingseat_set.all %}
+            {% if assignments %}
+                <article class="rounded-2xl border border-slate-200 p-6">
+                    <h2 class="text-lg font-semibold text-slate-900 flex items-center gap-3"><i class="fas fa-user-friends text-emerald-500"></i>Passenger manifest</h2>
+                    <div class="mt-4 space-y-4">
+                        {% for record in assignments %}
+                            <div class="rounded-xl border border-slate-200 p-4 bg-white shadow-sm">
+                                <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                                    <p class="text-base font-semibold text-slate-900">Passenger {{ forloop.counter }}: {{ record.passenger_first_name }} {{ record.passenger_last_name }}</p>
+                                    {% if record.seat %}
+                                        <span class="inline-flex items-center px-3 py-1 rounded-full bg-indigo-100 text-indigo-700 text-xs font-semibold">Seat {{ record.seat.seat_number }} · {{ record.seat.get_seat_class_display }}</span>
+                                    {% endif %}
+                                </div>
+                                <ul class="mt-3 text-sm text-slate-600 space-y-1">
+                                    {% if record.passenger_contact_number %}
+                                        <li><i class="fas fa-phone mr-2 text-slate-400"></i>{{ record.passenger_contact_number }}</li>
+                                    {% endif %}
+                                    {% if record.passenger_date_of_birth %}
+                                        <li><i class="fas fa-birthday-cake mr-2 text-slate-400"></i>Date of birth: {{ record.passenger_date_of_birth|date:"M d, Y" }}</li>
+                                    {% endif %}
+                                    <li><i class="fas fa-suitcase-rolling mr-2 text-slate-400"></i>Checked luggage: {{ record.main_luggage_weight|floatformat:1 }} kg
+                                        {% if record.luggage_fee > 0 %}
+                                            <span class="text-red-600">(+${{ record.luggage_fee|floatformat:2 }} surcharge)</span>
+                                        {% else %}
+                                            <span class="text-emerald-600">(within allowance)</span>
+                                        {% endif %}
+                                    </li>
+                                    <li><i class="fas fa-briefcase mr-2 text-slate-400"></i>Hand luggage: {{ record.hand_luggage_weight|floatformat:1 }} kg</li>
+                                </ul>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </article>
+            {% endif %}
+        {% endwith %}
+        {% endwith %}
 
         <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <a href="{% url 'flights:booking-list' %}" class="inline-flex items-center px-5 py-3 rounded-xl border border-slate-200 text-slate-600 text-sm font-semibold hover:border-slate-400">

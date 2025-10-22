@@ -127,59 +127,70 @@
                         <h2 class="text-xl font-semibold text-gray-800 mb-6">Hire Details</h2>
                         <form method="post" novalidate class="space-y-6">
                             {% csrf_token %}
-                            
-                            <div class="grid md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="{{ form.pickup_location.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Pick-up Location</label>
-                                    <input type="text" name="{{ form.pickup_location.name }}" id="{{ form.pickup_location.id_for_label }}" value="{{ form.pickup_location.value|default:'' }}" placeholder="Pick-up location" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
-                                    {% if form.pickup_location.errors %}
-                                        <p class="text-red-500 text-sm mt-1">{{ form.pickup_location.errors.0 }}</p>
-                                    {% endif %}
-                                </div>
-                                <div>
-                                    <label for="{{ form.dropoff_location.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Drop-off Location</label>
-                                    <input type="text" name="{{ form.dropoff_location.name }}" id="{{ form.dropoff_location.id_for_label }}" value="{{ form.dropoff_location.value|default:'' }}" placeholder="Drop-off location" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
-                                    {% if form.dropoff_location.errors %}
-                                        <p class="text-red-500 text-sm mt-1">{{ form.dropoff_location.errors.0 }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                            
-                            <div class="grid md:grid-cols-2 gap-4">
-                                <div>
-                                    <label for="{{ form.pickup_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Pick-up Date</label>
-                                    <input type="date" name="{{ form.pickup_date.name }}" id="{{ form.pickup_date.id_for_label }}" value="{{ form.pickup_date.value|default:'' }}" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
-                                    {% if form.pickup_date.errors %}
-                                        <p class="text-red-500 text-sm mt-1">{{ form.pickup_date.errors.0 }}</p>
-                                    {% endif %}
-                                </div>
-                                <div>
-                                    <label for="{{ form.dropoff_date.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Drop-off Date</label>
-                                    <input type="date" name="{{ form.dropoff_date.name }}" id="{{ form.dropoff_date.id_for_label }}" value="{{ form.dropoff_date.value|default:'' }}" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
-                                    {% if form.dropoff_date.errors %}
-                                        <p class="text-red-500 text-sm mt-1">{{ form.dropoff_date.errors.0 }}</p>
-                                    {% endif %}
-                                </div>
-                            </div>
+                            {{ form.car_id }}
+                            {{ form.pickup_location }}
+                            {{ form.dropoff_location }}
+                            {{ form.pickup_date }}
+                            {{ form.dropoff_date }}
                             
                             <div>
                                 <label for="{{ form.contact_email.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Contact Email</label>
-                                <input type="email" name="{{ form.contact_email.name }}" id="{{ form.contact_email.id_for_label }}" value="{{ form.contact_email.value|default:'' }}" placeholder="your@email.com" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none" required>
+                                {{ form.contact_email }}
                                 {% if form.contact_email.errors %}
                                     <p class="text-red-500 text-sm mt-1">{{ form.contact_email.errors.0 }}</p>
                                 {% endif %}
                             </div>
-                            
-                            {% if form.car_id %}
-                                {{ form.car_id }}
-                            {% endif %}
-                            {% if form.payment_token %}
-                                {{ form.payment_token }}
-                            {% endif %}
+
+                            <div class="bg-yellow-50 border border-yellow-200 text-yellow-800 text-sm rounded-lg p-4 flex items-start">
+                                <i class="fas fa-lock mr-2 mt-0.5"></i>
+                                <span>You'll be able to review your hire summary and complete secure payment on the next step.</span>
+                            </div>
+
+                            <div>
+                                <label for="{{ form.pickup_address.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Pick-up Address</label>
+                                {{ form.pickup_address }}
+                                {% if form.pickup_address.errors %}
+                                    <p class="text-red-500 text-sm mt-1">{{ form.pickup_address.errors.0 }}</p>
+                                {% endif %}
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="{{ form.first_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                                    {{ form.first_name }}
+                                    {% if form.first_name.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.first_name.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ form.last_name.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                                    {{ form.last_name }}
+                                    {% if form.last_name.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.last_name.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+
+                            <div class="grid md:grid-cols-2 gap-4">
+                                <div>
+                                    <label for="{{ form.contact_number.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Contact Number</label>
+                                    {{ form.contact_number }}
+                                    {% if form.contact_number.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.contact_number.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <label for="{{ form.pickup_time.id_for_label }}" class="block text-sm font-medium text-gray-700 mb-2">Pick-up Time</label>
+                                    {{ form.pickup_time }}
+                                    {% if form.pickup_time.errors %}
+                                        <p class="text-red-500 text-sm mt-1">{{ form.pickup_time.errors.0 }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
                             
                             <div class="pt-4">
                                 <button type="submit" class="w-full search-btn-custom text-white font-bold py-4 px-6 rounded-lg hover:shadow-lg transition-all">
-                                    <i class="fas fa-credit-card mr-2"></i>Confirm Hire
+                                    <i class="fas fa-arrow-right mr-2"></i>Review and continue
                                 </button>
                             </div>
                         </form>
@@ -199,6 +210,7 @@
                                     <div>
                                         <h4 class="font-semibold text-gray-800">{{ car.company }} {{ car.model }}</h4>
                                         <p class="text-sm text-gray-600">{{ car.category }}</p>
+                                        <p class="text-xs text-gray-500 mt-1">Pick-up: {{ car.pickup_location|default:'N/A' }} · Drop-off: {{ car.dropoff_location|default:'N/A' }}</p>
                                     </div>
                                 </div>
                             </div>
@@ -222,8 +234,8 @@
                             
                             <div class="border-t border-gray-200 pt-4">
                                 <div class="flex justify-between text-sm">
-                                    <span class="text-gray-600">Daily rate:</span>
-                                    <span class="font-semibold">${{ car.price_per_day }}</span>
+                                    <span class="text-gray-600">Trip rate:</span>
+                                    <span class="font-semibold">${{ car.price_per_trip }}</span>
                                 </div>
                                 <div class="flex justify-between text-sm text-gray-500 mt-1">
                                     <span>Taxes and fees will be calculated at checkout</span>
@@ -233,9 +245,9 @@
                             <div class="border-t border-gray-200 pt-4">
                                 <div class="flex justify-between">
                                     <span class="text-lg font-semibold text-gray-800">Starting from:</span>
-                                    <span class="text-2xl font-bold text-gray-800">${{ car.price_per_day }}</span>
+                                    <span class="text-2xl font-bold text-gray-800">${{ car.price_per_trip }}</span>
                                 </div>
-                                <p class="text-sm text-gray-500 mt-1">per day</p>
+                                <p class="text-sm text-gray-500 mt-1">per trip</p>
                             </div>
                         </div>
                     </div>

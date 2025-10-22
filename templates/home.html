@@ -164,26 +164,76 @@
                     <div class="p-6">
                         <div id="flightsTab" class="tab-panel is-active" role="tabpanel">
                             <form method="get" action="{% url 'flights:search' %}" class="space-y-4">
-                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+                                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                                     <div>
-                                        <label for="flight-origin" class="sr-only">Origin</label>
-                                        <input type="text" id="flight-origin" name="origin" placeholder="Origin" class="w-full p-3 border border-gray-300 rounded-lg" value="{{ flight_search_form.origin.value|default:'' }}">
+                                        <label for="home-flight-origin" class="block text-sm font-semibold text-gray-700 mb-1">Origin</label>
+                                        <select name="origin" id="home-flight-origin" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                                            {% for value,label in flight_search_form.origin.field.choices %}
+                                                {% if value %}
+                                                    <option value="{{ value }}" {% if flight_search_form.origin.value == value %}selected{% endif %}>{{ label }}</option>
+                                                {% else %}
+                                                    <option value="" disabled {% if not flight_search_form.origin.value %}selected{% endif %}>{{ label }}</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                     <div>
-                                        <label for="flight-dest" class="sr-only">Destination</label>
-                                        <input type="text" id="flight-dest" name="destination" placeholder="Destination" class="w-full p-3 border border-gray-300 rounded-lg" value="{{ flight_search_form.destination.value|default:'' }}">
+                                        <label for="home-flight-destination" class="block text-sm font-semibold text-gray-700 mb-1">Destination</label>
+                                        <select name="destination" id="home-flight-destination" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                                            {% for value,label in flight_search_form.destination.field.choices %}
+                                                {% if value %}
+                                                    <option value="{{ value }}" {% if flight_search_form.destination.value == value %}selected{% endif %}>{{ label }}</option>
+                                                {% else %}
+                                                    <option value="" disabled {% if not flight_search_form.destination.value %}selected{% endif %}>{{ label }}</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                     <div>
-                                        <label for="flight-depart" class="sr-only">Depart</label>
-                                        <input type="date" id="flight-depart" name="departure_date" class="w-full p-3 border border-gray-300 rounded-lg text-gray-500" value="{{ flight_search_form.departure_date.value|default:'' }}">
-                                    </div>
-                                     <div>
-                                        <label for="flight-return" class="sr-only">Return</label>
-                                        <input type="date" id="flight-return" name="return_date" class="w-full p-3 border border-gray-300 rounded-lg text-gray-500" value="{{ flight_search_form.return_date.value|default:'' }}">
+                                        <label for="home-flight-depart" class="block text-sm font-semibold text-gray-700 mb-1">Departure date</label>
+                                        <input type="date" id="home-flight-depart" name="departure_date" class="w-full p-3 border border-gray-300 rounded-lg text-gray-500 focus:outline-none focus:border-blue-500" value="{{ flight_search_form.departure_date.value|default:'' }}">
                                     </div>
                                     <div>
-                                        <label for="flight-passengers" class="sr-only">Passengers</label>
-                                        <input type="number" id="flight-passengers" name="passenger_count" min="1" max="7" placeholder="Passengers" class="w-full p-3 border border-gray-300 rounded-lg" value="{{ flight_search_form.passenger_count.value|default:1 }}">
+                                        <label for="home-flight-passengers" class="block text-sm font-semibold text-gray-700 mb-1">Passengers</label>
+                                        <input type="number" id="home-flight-passengers" name="passenger_count" min="1" max="7" placeholder="Passengers" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" value="{{ flight_search_form.passenger_count.value|default:1 }}">
+                                    </div>
+                                </div>
+                                <div class="bg-blue-50 border border-blue-100 rounded-xl p-4 space-y-4">
+                                    <label class="flex items-center text-sm font-medium text-gray-700">
+                                        <input type="checkbox" name="round_trip" id="home-flight-roundtrip" class="h-5 w-5 text-blue-600 focus:ring-blue-500 border-gray-300 rounded" {% if flight_search_form.round_trip.value %}checked{% endif %}>
+                                        <span class="ml-3">Round trip</span>
+                                    </label>
+                                    <div id="home-round-trip-options" class="space-y-4 {% if not flight_search_form.round_trip.value %}hidden{% endif %}">
+                                        <div>
+                                            <label for="home-flight-return" class="block text-sm font-semibold text-gray-700 mb-1">Return date</label>
+                                            <input type="date" id="home-flight-return" name="return_date" class="w-full p-3 border border-gray-300 rounded-lg text-gray-500 focus:outline-none focus:border-blue-500" value="{{ flight_search_form.return_date.value|default:'' }}" {% if not flight_search_form.round_trip.value %}disabled{% endif %}>
+                                        </div>
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                            <div data-round-trip-field>
+                                                <label for="home-return-origin" class="block text-sm font-semibold text-gray-700 mb-1">Return origin</label>
+                                                <select name="return_origin" id="home-return-origin" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" {% if not flight_search_form.round_trip.value %}disabled{% endif %}>
+                                                {% for value,label in flight_search_form.return_origin.field.choices %}
+                                                    {% if value %}
+                                                        <option value="{{ value }}" {% if flight_search_form.return_origin.value == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% else %}
+                                                        <option value="" disabled {% if not flight_search_form.return_origin.value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                            <div data-round-trip-field>
+                                                <label for="home-return-destination" class="block text-sm font-semibold text-gray-700 mb-1">Return destination</label>
+                                                <select name="return_destination" id="home-return-destination" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500" {% if not flight_search_form.round_trip.value %}disabled{% endif %}>
+                                                {% for value,label in flight_search_form.return_destination.field.choices %}
+                                                    {% if value %}
+                                                        <option value="{{ value }}" {% if flight_search_form.return_destination.value == value %}selected{% endif %}>{{ label }}</option>
+                                                    {% else %}
+                                                        <option value="" disabled {% if not flight_search_form.return_destination.value %}selected{% endif %}>{{ label }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        </div>
                                     </div>
                                 </div>
                                 <button type="submit" class="w-full search-btn-custom text-white font-bold py-3 px-4 rounded-lg">Search Flights</button>
@@ -194,23 +244,31 @@
                                 <div class="grid grid-cols-1 gap-4">
                                      <div>
                                         <label for="car-pickup" class="sr-only">Pick-up location</label>
-                                        <input type="text" id="car-pickup" name="pickup_location" placeholder="Enter pick-up location" class="w-full p-3 border border-gray-300 rounded-lg" value="{{ car_search_form.pickup_location.value|default:'' }}">
+                                        <select id="car-pickup" name="pickup_location" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                                            {% for value,label in car_search_form.pickup_location.field.choices %}
+                                                {% if value %}
+                                                    <option value="{{ value }}" {% if car_search_form.pickup_location.value == value %}selected{% endif %}>{{ label }}</option>
+                                                {% else %}
+                                                    <option value="" disabled {% if not car_search_form.pickup_location.value %}selected{% endif %}>{{ label }}</option>
+                                                {% endif %}
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                 </div>
-                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="grid grid-cols-1 gap-4">
                                     <div>
                                         <label for="pickup-date" class="sr-only">Pick-up date</label>
                                         <input type="date" id="pickup-date" name="pickup_date" class="w-full p-3 border border-gray-300 rounded-lg text-gray-500" value="{{ car_search_form.pickup_date.value|default:'' }}">
                                     </div>
-                                    <div>
-                                        <label for="dropoff-date" class="sr-only">Drop-off date</label>
-                                        <input type="date" id="dropoff-date" name="dropoff_date" class="w-full p-3 border border-gray-300 rounded-lg text-gray-500" value="{{ car_search_form.dropoff_date.value|default:'' }}">
-                                    </div>
                                 </div>
                                 <div class="grid grid-cols-1 gap-4">
                                      <div>
-                                        <label for="dropoff-location" class="sr-only">Drop-off location</label>
-                                        <input type="text" id="dropoff-location" name="dropoff_location" placeholder="Enter drop-off location" class="w-full p-3 border border-gray-300 rounded-lg" value="{{ car_search_form.dropoff_location.value|default:'' }}">
+                                        <label for="dropoff-location" class="sr-only">Drop-off location (optional)</label>
+                                        <select id="dropoff-location" name="dropoff_location" class="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:border-blue-500">
+                                            {% for value,label in car_search_form.dropoff_location.field.choices %}
+                                                <option value="{{ value }}" {% if car_search_form.dropoff_location.value == value %}selected{% endif %}>{{ label }}</option>
+                                            {% endfor %}
+                                        </select>
                                     </div>
                                 </div>
                                 <button type="submit" class="w-full search-btn-custom text-white font-bold py-3 px-4 rounded-lg">Search Vans</button>
@@ -349,6 +407,161 @@
                     }
                 });
             });
+
+            const roundTripCheckbox = document.getElementById('home-flight-roundtrip');
+            const roundTripContainer = document.getElementById('home-round-trip-options');
+            const originSelect = document.getElementById('home-flight-origin');
+            const destinationSelect = document.getElementById('home-flight-destination');
+            const returnOriginSelect = document.getElementById('home-return-origin');
+            const returnDestinationSelect = document.getElementById('home-return-destination');
+            const selectCache = new Map();
+
+            const selectMap = {
+                destination: destinationSelect,
+                return_origin: returnOriginSelect,
+                return_destination: returnDestinationSelect,
+            };
+
+            Object.entries(selectMap).forEach(([key, select]) => {
+                if (!select) {
+                    return;
+                }
+                selectCache.set(
+                    key,
+                    Array.from(select.options).map((option) => ({
+                        value: option.value,
+                        text: option.textContent,
+                        isPlaceholder: option.value === '' || option.disabled,
+                    })),
+                );
+            });
+
+            const ROUTE_RULES = {
+                'Katunayake (CMB)': {
+                    destination: ['Jaffna (JAF)'],
+                    return_origin: ['Jaffna (JAF)'],
+                    return_destination: ['Ratmalana (RMB)'],
+                },
+                'Jaffna (JAF)': {
+                    destination: ['Ratmalana (RMB)'],
+                    return_origin: ['Ratmalana (RMB)'],
+                    return_destination: ['Jaffna (JAF)'],
+                },
+                'Ratmalana (RMB)': {
+                    destination: ['Jaffna (JAF)'],
+                    return_origin: ['Jaffna (JAF)'],
+                    return_destination: ['Ratmalana (RMB)'],
+                },
+            };
+
+            const applyOptions = (cacheKey, allowedValues) => {
+                const select = selectMap[cacheKey];
+                const optionsData = selectCache.get(cacheKey);
+                if (!select || !optionsData) {
+                    return;
+                }
+                const normalizedAllowed = Array.isArray(allowedValues) ? allowedValues : null;
+                const previousValue = select.value;
+                const placeholderData = optionsData.find((option) => option.isPlaceholder);
+                const filteredOptions = optionsData.filter((option) => {
+                    if (option.isPlaceholder) {
+                        return false;
+                    }
+                    return !normalizedAllowed || normalizedAllowed.includes(option.value);
+                });
+                select.innerHTML = '';
+                let placeholderElement = null;
+                if (placeholderData) {
+                    placeholderElement = document.createElement('option');
+                    placeholderElement.value = '';
+                    placeholderElement.textContent = placeholderData.text;
+                    placeholderElement.disabled = true;
+                    select.appendChild(placeholderElement);
+                }
+                filteredOptions.forEach((option) => {
+                    const optionElement = document.createElement('option');
+                    optionElement.value = option.value;
+                    optionElement.textContent = option.text;
+                    select.appendChild(optionElement);
+                });
+                let finalValue = previousValue;
+                if (normalizedAllowed && !normalizedAllowed.includes(previousValue)) {
+                    finalValue = filteredOptions.length === 1 ? filteredOptions[0].value : '';
+                }
+                if (finalValue) {
+                    select.value = finalValue;
+                } else if (placeholderElement) {
+                    placeholderElement.selected = true;
+                }
+            };
+
+            const updateDestinationOptions = () => {
+                if (!originSelect) {
+                    return;
+                }
+                const originValue = originSelect.value;
+                const rule = originValue ? ROUTE_RULES[originValue] : null;
+                if (rule) {
+                    applyOptions('destination', rule.destination);
+                } else {
+                    applyOptions('destination', null);
+                }
+            };
+
+            const enforceReturnOptions = () => {
+                if (!roundTripCheckbox) {
+                    return;
+                }
+                const isRoundTrip = roundTripCheckbox.checked;
+                if (!isRoundTrip) {
+                    applyOptions('return_origin', null);
+                    applyOptions('return_destination', null);
+                    return;
+                }
+                const originValue = originSelect ? originSelect.value : '';
+                const rule = originValue ? ROUTE_RULES[originValue] : null;
+                if (rule) {
+                    applyOptions('return_origin', rule.return_origin);
+                    applyOptions('return_destination', rule.return_destination);
+                } else {
+                    applyOptions('return_origin', null);
+                    applyOptions('return_destination', null);
+                }
+            };
+
+            if (originSelect) {
+                originSelect.addEventListener('change', () => {
+                    updateDestinationOptions();
+                    enforceReturnOptions();
+                });
+            }
+
+            if (roundTripCheckbox && roundTripContainer) {
+                const roundTripInputs = roundTripContainer.querySelectorAll('select, input');
+
+                const toggleRoundTrip = (isChecked) => {
+                    if (isChecked) {
+                        roundTripContainer.classList.remove('hidden');
+                        roundTripInputs.forEach((el) => {
+                            el.disabled = false;
+                        });
+                    } else {
+                        roundTripContainer.classList.add('hidden');
+                        roundTripInputs.forEach((el) => {
+                            el.disabled = true;
+                        });
+                    }
+                    enforceReturnOptions();
+                };
+
+                toggleRoundTrip(roundTripCheckbox.checked);
+                roundTripCheckbox.addEventListener('change', (event) => {
+                    toggleRoundTrip(event.target.checked);
+                });
+            }
+
+            updateDestinationOptions();
+            enforceReturnOptions();
 
             const mobileMenuButton = document.getElementById('mobile-menu-button');
             const mobileMenu = document.getElementById('mobile-menu');

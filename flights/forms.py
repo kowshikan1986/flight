@@ -9,29 +9,66 @@ from django import forms
 from django.conf import settings
 
 from .models import Flight, FlightSeat
+from .services import (
+    HAND_LUGGAGE_LIMIT_KG,
+    calculate_luggage_overweight_fee,
+    normalize_weight_input,
+)
+
+
+AIRPORT_CHOICES: list[tuple[str, str]] = [
+    ('Katunayake (CMB)', 'Katunayake (CMB)'),
+    ('Jaffna (JAF)', 'Jaffna (JAF)'),
+    ('Ratmalana (RMB)', 'Ratmalana (RMB)'),
+]
+
+AIRPORT_VALUES: set[str] = {value for value, _ in AIRPORT_CHOICES}
+
+ROUTE_RULES: dict[str, dict[str, list[str]]] = {
+    'Katunayake (CMB)': {
+        'destination': ['Jaffna (JAF)'],
+        'return_origin': ['Jaffna (JAF)'],
+        'return_destination': ['Ratmalana (RMB)'],
+    },
+    'Jaffna (JAF)': {
+        'destination': ['Ratmalana (RMB)'],
+        'return_origin': ['Ratmalana (RMB)'],
+        'return_destination': ['Jaffna (JAF)'],
+    },
+    'Ratmalana (RMB)': {
+        'destination': ['Jaffna (JAF)'],
+        'return_origin': ['Jaffna (JAF)'],
+        'return_destination': ['Ratmalana (RMB)'],
+    },
+}
 
 
 class FlightSearchForm(forms.Form):
-    origin = forms.CharField(max_length=120)
-    destination = forms.CharField(max_length=120)
+    origin = forms.ChoiceField(choices=AIRPORT_CHOICES)
+    destination = forms.ChoiceField(choices=AIRPORT_CHOICES)
     departure_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}))
     return_date = forms.DateField(widget=forms.DateInput(attrs={'type': 'date'}), required=False)
+    return_origin = forms.ChoiceField(choices=AIRPORT_CHOICES, required=False)
+    return_destination = forms.ChoiceField(choices=AIRPORT_CHOICES, required=False)
     round_trip = forms.BooleanField(required=False)
     passenger_count = forms.IntegerField(min_value=1, max_value=7, initial=1)
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.fields['origin'].widget.attrs.update({
+        select_attrs = {
             'class': 'form-control form-control-lg',
-            'placeholder': 'Departure city'
-        })
-        self.fields['destination'].widget.attrs.update({
-            'class': 'form-control form-control-lg',
-            'placeholder': 'Arrival city'
-        })
+        }
+        self.fields['origin'].choices = [('', 'Select origin airport')] + AIRPORT_CHOICES
+        self.fields['origin'].widget.attrs.update(select_attrs)
+        self.fields['destination'].choices = [('', 'Select destination airport')] + AIRPORT_CHOICES
+        self.fields['destination'].widget.attrs.update(select_attrs)
         date_attrs = {'class': 'form-control form-control-lg'}
         self.fields['departure_date'].widget.attrs.update(date_attrs | {'placeholder': 'Departure'})
-        self.fields['return_date'].widget.attrs.update(date_attrs | {'placeholder': 'Return (optional)'})
+        self.fields['return_date'].widget.attrs.update(date_attrs | {'placeholder': 'Return date'})
+        self.fields['return_origin'].choices = [('', 'Select return origin')] + AIRPORT_CHOICES
+        self.fields['return_origin'].widget.attrs.update(select_attrs)
+        self.fields['return_destination'].choices = [('', 'Select return destination')] + AIRPORT_CHOICES
+        self.fields['return_destination'].widget.attrs.update(select_attrs)
         self.fields['round_trip'].widget.attrs.update({'class': 'form-check-input'})
         self.fields['passenger_count'].widget.attrs.update({
             'class': 'form-control form-control-lg',
@@ -50,15 +87,46 @@ class FlightSearchForm(forms.Form):
 
     def clean(self):
         cleaned_data = super().clean()
+        origin = (cleaned_data.get('origin') or '').strip()
+        destination = (cleaned_data.get('destination') or '').strip()
         departure_date = cleaned_data.get('departure_date')
         return_date = cleaned_data.get('return_date')
+        return_origin = (cleaned_data.get('return_origin') or '').strip()
+        return_destination = (cleaned_data.get('return_destination') or '').strip()
+        cleaned_data['origin'] = origin
+        cleaned_data['destination'] = destination
+        cleaned_data['return_origin'] = return_origin
+        cleaned_data['return_destination'] = return_destination
         today_value = date.today()
         if departure_date and departure_date < today_value:
             self.add_error('departure_date', 'Departure date cannot be in the past.')
-        if return_date and return_date < today_value:
-            self.add_error('return_date', 'Return date cannot be in the past.')
-        if departure_date and return_date and return_date <= departure_date:
-            self.add_error('return_date', 'Return date must be after departure date.')
+        round_trip = bool(cleaned_data.get('round_trip'))
+        if origin and origin not in AIRPORT_VALUES:
+            self.add_error('origin', 'Select a valid origin airport.')
+        route_rule = ROUTE_RULES.get(origin)
+        if origin and not route_rule:
+            self.add_error('origin', 'Origin airport is not supported.')
+        if destination and destination not in AIRPORT_VALUES:
+            self.add_error('destination', 'Select a valid destination airport.')
+        if route_rule and destination and destination not in route_rule['destination']:
+            self.add_error('destination', 'Destination is not available for the selected origin.')
+        if return_date:
+            if return_date < today_value:
+                self.add_error('return_date', 'Return date cannot be in the past.')
+            if departure_date and return_date < departure_date:
+                self.add_error('return_date', 'Return date cannot be before departure date.')
+        if round_trip:
+            if not return_date:
+                self.add_error('return_date', 'Please choose a return date for a round trip.')
+            if not return_origin:
+                self.add_error('return_origin', 'Please choose the return origin city.')
+            if not return_destination:
+                self.add_error('return_destination', 'Please choose the return destination city.')
+            if route_rule:
+                if return_origin and return_origin not in route_rule['return_origin']:
+                    self.add_error('return_origin', 'Return origin must match the outbound routing rules.')
+                if return_destination and return_destination not in route_rule['return_destination']:
+                    self.add_error('return_destination', 'Return destination must match the outbound routing rules.')
         return cleaned_data
 
 
@@ -76,7 +144,10 @@ class FlightPassengerDetailsForm(forms.Form):
         self.passenger_count = max(1, min(7, passenger_count))
         self.fields['flight_id'].initial = flight.id
         self.fields['passenger_count'].initial = self.passenger_count
-        available_seats_qs = flight.seats.filter(is_reserved=False).order_by('seat_number')
+        available_seats_qs = flight.seats.filter(
+            is_reserved=False,
+            leg=FlightSeat.Leg.OUTBOUND,
+        ).order_by('seat_number')
         self.available_seats = list(available_seats_qs)
         self.fields['contact_email'].widget.attrs.update({'class': 'form-control', 'placeholder': 'Contact email'})
         self.fields['notify_admin'].widget.attrs.update({'class': 'form-check-input'})
@@ -95,21 +166,64 @@ class FlightPassengerDetailsForm(forms.Form):
                 widget=forms.DateInput(attrs={'type': 'date'}),
                 error_messages={'required': 'Date of birth is required for each passenger.'},
             )
+            main_luggage_field = forms.DecimalField(
+                min_value=0,
+                max_digits=5,
+                decimal_places=2,
+                required=True,
+                initial=0,
+                error_messages={
+                    'required': 'Enter main luggage weight for each passenger.',
+                    'min_value': 'Checked luggage weight cannot be negative.',
+                },
+            )
+            hand_luggage_field = forms.DecimalField(
+                min_value=0,
+                max_value=float(HAND_LUGGAGE_LIMIT_KG),
+                max_digits=4,
+                decimal_places=2,
+                required=True,
+                initial=0,
+                error_messages={
+                    'required': 'Enter hand luggage weight for each passenger.',
+                    'min_value': 'Hand luggage weight cannot be negative.',
+                    'max_value': f'Hand luggage cannot exceed {HAND_LUGGAGE_LIMIT_KG} kg.',
+                },
+            )
 
             first_name_field.label = f'Passenger {idx + 1} first name'
             last_name_field.label = f'Passenger {idx + 1} last name'
             contact_field.label = f'Passenger {idx + 1} contact number'
             dob_field.label = f'Passenger {idx + 1} date of birth'
+            main_luggage_field.label = f'Passenger {idx + 1} checked luggage (kg)'
+            hand_luggage_field.label = f'Passenger {idx + 1} hand luggage (kg)'
 
             self.fields[f'{field_prefix}_first_name'] = first_name_field
             self.fields[f'{field_prefix}_last_name'] = last_name_field
             self.fields[f'{field_prefix}_contact_number'] = contact_field
             self.fields[f'{field_prefix}_date_of_birth'] = dob_field
+            self.fields[f'{field_prefix}_main_luggage_weight'] = main_luggage_field
+            self.fields[f'{field_prefix}_hand_luggage_weight'] = hand_luggage_field
 
             first_name_field.widget.attrs.update({'class': 'form-control', 'placeholder': 'First name'})
             last_name_field.widget.attrs.update({'class': 'form-control', 'placeholder': 'Last name'})
             contact_field.widget.attrs.update({'class': 'form-control', 'placeholder': 'Contact number'})
             dob_field.widget.attrs.update({'class': 'form-control', 'max': today_iso})
+            main_luggage_field.widget.attrs.update({
+                'class': 'form-control',
+                'placeholder': 'e.g. 18',
+                'inputmode': 'decimal',
+                'min': 0,
+                'step': '0.1',
+            })
+            hand_luggage_field.widget.attrs.update({
+                'class': 'form-control',
+                'placeholder': 'Max 7',
+                'inputmode': 'decimal',
+                'min': 0,
+                'max': float(HAND_LUGGAGE_LIMIT_KG),
+                'step': '0.1',
+            })
 
             self.passenger_fields.append({
                 'index': idx + 1,
@@ -117,6 +231,8 @@ class FlightPassengerDetailsForm(forms.Form):
                 'last_name': self[f'{field_prefix}_last_name'],
                 'contact_number': self[f'{field_prefix}_contact_number'],
                 'date_of_birth': self[f'{field_prefix}_date_of_birth'],
+                'main_luggage_weight': self[f'{field_prefix}_main_luggage_weight'],
+                'hand_luggage_weight': self[f'{field_prefix}_hand_luggage_weight'],
             })
 
     def clean_passenger_count(self) -> int:
@@ -158,6 +274,29 @@ class FlightPassengerDetailsForm(forms.Form):
                 self.add_error(dob_key, 'Date of birth cannot be in the future.')
                 invalid_passengers.add(idx)
 
+            main_weight_key = f'{prefix}_main_luggage_weight'
+            main_weight_value = cleaned_data.get(main_weight_key)
+            if main_weight_value is None:
+                if main_weight_key not in self.errors:
+                    self.add_error(main_weight_key, 'Enter main luggage weight for each passenger.')
+                invalid_passengers.add(idx)
+            else:
+                normalized_main = normalize_weight_input(main_weight_value)
+                cleaned_data[main_weight_key] = normalized_main
+
+            hand_weight_key = f'{prefix}_hand_luggage_weight'
+            hand_weight_value = cleaned_data.get(hand_weight_key)
+            if hand_weight_value is None:
+                if hand_weight_key not in self.errors:
+                    self.add_error(hand_weight_key, 'Enter hand luggage weight for each passenger.')
+                invalid_passengers.add(idx)
+            else:
+                normalized_hand = normalize_weight_input(hand_weight_value)
+                if normalized_hand > HAND_LUGGAGE_LIMIT_KG:
+                    self.add_error(hand_weight_key, f'Hand luggage cannot exceed {HAND_LUGGAGE_LIMIT_KG} kg.')
+                    invalid_passengers.add(idx)
+                cleaned_data[hand_weight_key] = normalized_hand
+
         if invalid_passengers:
             raise forms.ValidationError('Please complete all passenger details.')
         return cleaned_data
@@ -171,11 +310,17 @@ class FlightPassengerDetailsForm(forms.Form):
                 dob_serialized: str | None = dob_value.isoformat()
             else:
                 dob_serialized = dob_value if isinstance(dob_value, str) else None
+            main_weight = normalize_weight_input(self.cleaned_data.get(f'{prefix}_main_luggage_weight'))
+            hand_weight = normalize_weight_input(self.cleaned_data.get(f'{prefix}_hand_luggage_weight'))
+            luggage_fee = calculate_luggage_overweight_fee(main_weight)
             details.append({
                 'first_name': self.cleaned_data.get(f'{prefix}_first_name', '').strip(),
                 'last_name': self.cleaned_data.get(f'{prefix}_last_name', '').strip(),
                 'contact_number': self.cleaned_data.get(f'{prefix}_contact_number', '').strip(),
                 'date_of_birth': dob_serialized,
+                'main_luggage_weight': str(main_weight),
+                'hand_luggage_weight': str(hand_weight),
+                'luggage_fee': str(luggage_fee),
             })
         return details
 
