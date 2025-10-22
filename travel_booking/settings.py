@@ -32,6 +32,9 @@ DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "True"
 
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "*,https://jaffna-main-eab4626.kuberns.cloud").split(",") if host.strip()]
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "http://jaffna-main-eab4626.kuberns.cloud").split(",") if origin.strip()]
+import os
+print("DJANGO_ALLOWED_HOSTS =", os.getenv("DJANGO_ALLOWED_HOSTS"))
+print("ALLOWED_HOSTS =", ALLOWED_HOSTS)
 
 FEATURE_HOTELS_ENABLED = os.getenv("FEATURE_HOTELS_ENABLED", "true").lower() == "true"
 
