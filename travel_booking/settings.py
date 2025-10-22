@@ -28,7 +28,7 @@ IS_TESTING = 'test' in sys.argv
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-me")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() == "False"
+DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "True"
 
 ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "*,http://jaffna-main-eab4626.kuberns.cloud/").split(",") if host.strip()]
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", "http://jaffna-main-eab4626.kuberns.cloud/").split(",") if origin.strip()]
