@@ -28,10 +28,10 @@ IS_TESTING = 'test' in sys.argv
 SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-me")
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "True"
+DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "true"
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "*,jaffna-main-eab4626.kuberns.cloud").split(",") if host.strip()]
-default_csrf_origins = "https://jaffna-main-eab4626.kuberns.cloud"
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "*").split(",") if host.strip()]
+default_csrf_origins = ""
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", default_csrf_origins).split(",") if origin.strip()]
 
 FEATURE_HOTELS_ENABLED = os.getenv("FEATURE_HOTELS_ENABLED", "true").lower() == "true"
@@ -68,8 +68,7 @@ MIDDLEWARE = [
     'django.contrib.auth.middleware.AuthenticationMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
-    
-    ]
+]
 
 ROOT_URLCONF = 'travel_booking.urls'
 
@@ -100,11 +99,11 @@ WSGI_APPLICATION = 'travel_booking.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "jaffna",
-        "USER": "admin",
-        "PASSWORD": "Admin123",
-        "HOST": "ec2-13-235-113-205.ap-south-1.compute.amazonaws.com",
-        "PORT": "5432",
+        "NAME": os.getenv("DB_NAME", "jaffna"),
+        "USER": os.getenv("DB_USER", "admin"),
+        "PASSWORD": os.getenv("DB_PASSWORD", "Admin123"),
+        "HOST": os.getenv("DB_HOST", "ec2-13-235-113-205.ap-south-1.compute.amazonaws.com"),
+        "PORT": os.getenv("DB_PORT", "5432"),
     }
 }
 
