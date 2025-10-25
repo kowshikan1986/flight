@@ -281,3 +281,43 @@ CELERY_ACCEPT_CONTENT = ['json']
 CELERY_TASK_SERIALIZER = 'json'
 CELERY_RESULT_SERIALIZER = 'json'
 CELERY_BEAT_SCHEDULE = {}
+# Paste or merge into your settings.py (near the other env parsing).
+import os
+
+# DEBUG should come from env
+DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes")
+
+# Allow your custom domain + Azure hosts and portal domains (allow subdomains via leading dot)
+ALLOWED_HOSTS = [
+    h.strip() for h in os.getenv(
+        "DJANGO_ALLOWED_HOSTS",
+        "jaffna-main-eab4626.kuberns.cloud,.azurewebsites.net,.reactblade.portal.azure.net"
+    ).split(",") if h.strip()
+]
+
+# CSRF_TRUSTED_ORIGINS requires scheme + host (full origin). Add your production domain and App Service host.
+CSRF_TRUSTED_ORIGINS = [
+    o.strip() for o in os.getenv(
+        "DJANGO_CSRF_TRUSTED_ORIGINS",
+        "https://jaffna-main-eab4626.kuberns.cloud,https://weapp123456-a6cpexefdrhyhcct.uksouth-01.azurewebsites.net"
+    ).split(",") if o.strip()
+]
+
+# If behind a proxy (Azure front end), tell Django the forwarded-proto header
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+USE_X_FORWARDED_HOST = True
+
+# static files (WhiteNoise) example: ensure you have whitenoise in installed packages and middleware
+STATIC_URL = "/static/"
+STATIC_ROOT = os.path.join(BASE_DIR, "staticfiles")
+
+MIDDLEWARE = [
+    # WhiteNoise should be high in the list, before other middlewares that might serve responses.
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    # ... existing middleware ...
+]
+
+# Debug prints (temporary — remove after debugging)
+print("DJANGO DEBUG:", DEBUG)
+print("ALLOWED_HOSTS:", ALLOWED_HOSTS)
+print("CSRF_TRUSTED_ORIGINS:", CSRF_TRUSTED_ORIGINS)
