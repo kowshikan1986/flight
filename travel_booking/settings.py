@@ -30,8 +30,8 @@ SECRET_KEY = os.getenv("DJANGO_SECRET_KEY", "change-me")
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = os.getenv("DJANGO_DEBUG", "True").lower() == "True"
 
-ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "*,jaffna-main-eab4626.kuberns.cloud").split(",") if host.strip()]
-default_csrf_origins = "https://jaffna-main-eab4626.kuberns.cloud"
+ALLOWED_HOSTS = [host.strip() for host in os.getenv("DJANGO_ALLOWED_HOSTS", "*,weapp123456-a6cpexefdrhyhcct.uksouth-01.azurewebsites.net").split(",") if host.strip()]
+default_csrf_origins = "https://weapp123456-a6cpexefdrhyhcct.uksouth-01.azurewebsites.net"
 CSRF_TRUSTED_ORIGINS = [origin.strip() for origin in os.getenv("DJANGO_CSRF_TRUSTED_ORIGINS", default_csrf_origins).split(",") if origin.strip()]
 
 FEATURE_HOTELS_ENABLED = os.getenv("FEATURE_HOTELS_ENABLED", "true").lower() == "true"
@@ -101,9 +101,9 @@ DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
         "NAME": "jaffna",
-        "USER": "admin",
-        "PASSWORD": "Admin123",
-        "HOST": "ec2-13-235-113-205.ap-south-1.compute.amazonaws.com",
+        "USER": "kowshikan1",
+        "PASSWORD": "London25",
+        "HOST": "hoteldb2510.postgres.database.azure.com",
         "PORT": "5432",
     }
 }
