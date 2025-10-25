@@ -287,22 +287,6 @@ import os
 # DEBUG should come from env
 DEBUG = os.getenv("DJANGO_DEBUG", "False").lower() in ("1", "true", "yes")
 
-# Allow your custom domain + Azure hosts and portal domains (allow subdomains via leading dot)
-ALLOWED_HOSTS = [
-    h.strip() for h in os.getenv(
-        "DJANGO_ALLOWED_HOSTS",
-        "jaffna-main-eab4626.kuberns.cloud,.azurewebsites.net,.reactblade.portal.azure.net"
-    ).split(",") if h.strip()
-]
-
-# CSRF_TRUSTED_ORIGINS requires scheme + host (full origin). Add your production domain and App Service host.
-CSRF_TRUSTED_ORIGINS = [
-    o.strip() for o in os.getenv(
-        "DJANGO_CSRF_TRUSTED_ORIGINS",
-        "https://jaffna-main-eab4626.kuberns.cloud,https://weapp123456-a6cpexefdrhyhcct.uksouth-01.azurewebsites.net"
-    ).split(",") if o.strip()
-]
-
 # If behind a proxy (Azure front end), tell Django the forwarded-proto header
 SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 USE_X_FORWARDED_HOST = True
