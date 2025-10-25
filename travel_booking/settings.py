@@ -100,11 +100,14 @@ WSGI_APPLICATION = 'travel_booking.wsgi.application'
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": "hoteldb2510",
-        "USER": "kowshikan1",
-        "PASSWORD": "London25",
-        "HOST": "hoteldb2510.postgres.database.azure.com",
-        "PORT": "5432",
+        "NAME": os.environ.get("DB_NAME", "hoteldb2510"),
+        # Use Azure Postgres user@servername format:
+        "USER": os.environ.get("DB_USER", "kowshikan1@hoteldb2510"),
+        "PASSWORD": os.environ.get("DB_PASSWORD", ""),
+        "HOST": os.environ.get("DB_HOST", "hoteldb2510.postgres.database.azure.com"),
+        "PORT": os.environ.get("DB_PORT", "5432"),
+        # Azure requires sslmode=require
+        "OPTIONS": {"sslmode": os.environ.get("DB_SSLMODE", "require")},
     }
 }
 
